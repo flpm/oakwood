@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Data files (personal)
+data/oakwood.db
+data/bookshelf/*.csv
+
+# Notebooks (may contain personal data)
+notebooks/
+
+# IDE
+.idea/
+.vscode/
