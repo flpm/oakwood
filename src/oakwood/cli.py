@@ -9,6 +9,7 @@ import click
 from . import database, importer, ui
 from .database import (
     get_all_books,
+    get_all_books_by_date,
     get_all_shelves,
     get_book_by_isbn,
     get_book_count,
@@ -113,6 +114,49 @@ def search_cmd(query: str) -> None:
 
     books = search_books(conn, query)
     ui.display_book_table(books)
+    conn.close()
+
+
+def _browse_loop(conn) -> None:
+    """Run the browse navigation loop."""
+    books = get_all_books_by_date(conn)
+    if not books:
+        ui.print_info("No books in collection.")
+        return
+
+    total = len(books)
+    index = 0
+
+    while True:
+        ui.console.clear()
+        ui.display_book_summary(books[index], index + 1, total)
+        choice = ui.browse_prompt()
+
+        if choice == "q":
+            break
+        elif choice == "n":
+            index = min(index + 1, total - 1)
+        elif choice == "p":
+            index = max(index - 1, 0)
+        elif choice == "f":
+            index = min(index + 10, total - 1)
+        elif choice == "b":
+            index = max(index - 10, 0)
+        elif choice == "d":
+            ui.console.clear()
+            ui.display_book_info(books[index])
+            ui.console.print()
+            ui.console.input("[dim]Press Enter to continue[/dim]")
+
+
+@main.command("browse")
+def browse_cmd() -> None:
+    """Browse books one at a time, newest first."""
+    conn = get_connection()
+    init_db(conn)
+
+    _browse_loop(conn)
+
     conn.close()
 
 
@@ -224,6 +268,7 @@ def interactive_mode() -> None:
     options = [
         ("import", "Import books from CSV"),
         ("list", "List all books"),
+        ("browse", "Browse books"),
         ("stats", "Show statistics"),
         ("search", "Search books"),
         ("info", "Book details (by ISBN)"),
@@ -241,6 +286,9 @@ def interactive_mode() -> None:
             with ui.create_spinner("Importing books..."):
                 added, skipped = importer.import_csv(Path(csv_path), conn)
             ui.print_import_summary(added, skipped)
+
+        elif choice == "browse":
+            _browse_loop(conn)
 
         elif choice == "list":
             shelves = get_all_shelves(conn)

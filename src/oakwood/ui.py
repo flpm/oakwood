@@ -12,6 +12,12 @@ from .models import Book
 
 console = Console()
 
+BROWSE_MAX_WIDTH = 80
+
+
+def _browse_width() -> int:
+    return min(console.width, BROWSE_MAX_WIDTH)
+
 
 def print_success(message: str) -> None:
     """Print a success message with checkmark."""
@@ -170,7 +176,67 @@ def display_book_info(book: Book) -> None:
     else:
         lines.append("[dim]Not verified[/dim]")
 
-    console.print("\n".join(lines))
+    panel = Panel(
+        "\n".join(lines),
+        title="[dim]Book Details[/dim]",
+        title_align="left",
+        border_style="dim",
+        width=_browse_width(),
+        padding=(1, 2),
+    )
+    console.print(panel)
+
+
+def display_book_summary(book: Book, index: int, total: int) -> None:
+    """Display a compact book summary for browse mode."""
+    lines = []
+    lines.append(f"[bold]{book.full_title}[/bold]")
+    if book.authors:
+        lines.append(f"[dim]by[/dim] {book.authors}")
+    lines.append("")
+
+    details = []
+    if book.bookshelf:
+        details.append(book.bookshelf)
+    if book.format:
+        details.append(book.format)
+    if book.page_count:
+        details.append(f"{book.page_count} pages")
+    if details:
+        lines.append("[dim]" + "  ·  ".join(details) + "[/dim]")
+
+    if book.date_added:
+        lines.append(f"[dim]Added: {book.date_added}[/dim]")
+
+    if book.description:
+        lines.append("")
+        desc = book.description[:300]
+        if len(book.description) > 300:
+            desc += "..."
+        lines.append(desc)
+
+    panel = Panel(
+        "\n".join(lines),
+        title=f"[dim]Book {index} of {total}[/dim]",
+        title_align="left",
+        border_style="dim",
+        width=_browse_width(),
+        padding=(1, 2),
+    )
+    console.print(panel)
+
+
+def browse_prompt() -> str:
+    """Show navigation prompt for browse mode and return user choice."""
+    console.print(
+        "[dim]\[n] Next  \[p] Previous  \[f] +10  \[b] -10  \[d] Details  \[q] Quit[/dim]",
+        width=_browse_width(),
+    )
+    while True:
+        choice = Prompt.ask("[dim]Navigate[/dim]", default="n")
+        if choice.lower() in ("n", "p", "f", "b", "d", "q"):
+            return choice.lower()
+        console.print("[dim]Invalid choice. Use n, p, f, b, d, or q.[/dim]")
 
 
 def interactive_menu(options: list[tuple[str, str]]) -> Optional[str]:

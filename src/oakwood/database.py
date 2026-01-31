@@ -209,6 +209,14 @@ def get_all_shelves(conn: sqlite3.Connection) -> list[str]:
     return [row["bookshelf"] for row in cursor]
 
 
+def get_all_books_by_date(conn: sqlite3.Connection) -> list[Book]:
+    """Get all books ordered by date added (most recent first)."""
+    cursor = conn.execute(
+        "SELECT * FROM books ORDER BY date_added IS NULL, date_added DESC, title"
+    )
+    return [_row_to_book(row) for row in cursor]
+
+
 def search_books(conn: sqlite3.Connection, query: str) -> Iterator[Book]:
     """Search books by title, author, or ISBN."""
     pattern = f"%{query}%"
