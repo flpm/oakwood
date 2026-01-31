@@ -239,36 +239,38 @@ def browse_prompt() -> str:
         console.print("[dim]Invalid choice. Use n, p, f, b, d, or q.[/dim]")
 
 
-def interactive_menu(options: list[tuple[str, str]]) -> Optional[str]:
+def interactive_menu(
+    options: list[tuple[str, str, str]],
+    header: Optional[Callable[[], None]] = None,
+) -> Optional[str]:
     """Display an interactive menu and return the selected option key.
 
     Args:
-        options: List of (key, label) tuples
+        options: List of (key, shortcut, label) tuples
+        header: Optional callback to print a header after clearing the screen
 
     Returns:
         The selected key or None if user quits
     """
+    console.clear()
+    if header:
+        header()
+    shortcuts: dict[str, str] = {}
     console.print()
-    for i, (key, label) in enumerate(options, 1):
-        console.print(f"  [dim]{i}.[/dim] {label}")
-    console.print(f"  [dim]q.[/dim] Quit")
+    for key, shortcut, label in options:
+        shortcuts[shortcut] = key
+        console.print(f"  [dim]\\[{shortcut}][/dim] {label}")
+    console.print(f"  [dim]\\[q][/dim] Quit")
     console.print()
 
     while True:
-        choice = Prompt.ask("[dim]Select option[/dim]", default="q")
+        choice = Prompt.ask("[dim]Select[/dim]", default="q")
 
         if choice.lower() == "q":
             return None
 
-        try:
-            idx = int(choice) - 1
-            if 0 <= idx < len(options):
-                return options[idx][0]
-        except ValueError:
-            # Check if they typed the key directly
-            for key, _ in options:
-                if choice.lower() == key.lower():
-                    return key
+        if choice.lower() in shortcuts:
+            return shortcuts[choice.lower()]
 
         console.print("[dim]Invalid choice[/dim]")
 

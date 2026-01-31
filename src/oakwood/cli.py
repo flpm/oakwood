@@ -10,7 +10,6 @@ from . import database, importer, ui
 from .database import (
     get_all_books,
     get_all_books_by_date,
-    get_all_shelves,
     get_book_by_isbn,
     get_book_count,
     get_connection,
@@ -259,24 +258,23 @@ def interactive_mode() -> None:
     conn = get_connection()
     init_db(conn)
 
-    ui.console.print("[bold]Oakwood[/bold] Book Catalogue\n")
-
-    total = get_book_count(conn)
-    if total > 0:
-        ui.print_info(f"{total} books in collection")
-
     options = [
-        ("import", "Import books from CSV"),
-        ("list", "List all books"),
-        ("browse", "Browse books"),
-        ("stats", "Show statistics"),
-        ("search", "Search books"),
-        ("info", "Book details (by ISBN)"),
-        ("verify", "Verify book (by ISBN)"),
+        ("import", "i", "Import books from CSV"),
+        ("browse", "b", "Browse books"),
+        ("stats", "t", "Show statistics"),
+        ("search", "s", "Search books"),
+        ("info", "n", "Book details (by ISBN)"),
+        ("verify", "v", "Verify book (by ISBN)"),
     ]
 
+    def _print_header() -> None:
+        ui.console.print("[bold]Oakwood[/bold] Book Catalogue\n")
+        total = get_book_count(conn)
+        if total > 0:
+            ui.print_info(f"{total} books in collection")
+
     while True:
-        choice = ui.interactive_menu(options)
+        choice = ui.interactive_menu(options, header=_print_header)
 
         if choice is None:
             break
@@ -289,12 +287,6 @@ def interactive_mode() -> None:
 
         elif choice == "browse":
             _browse_loop(conn)
-
-        elif choice == "list":
-            shelves = get_all_shelves(conn)
-            shelf = ui.prompt_shelf(shelves)
-            books = get_all_books(conn, shelf=shelf)
-            ui.display_book_table(books)
 
         elif choice == "stats":
             total = get_book_count(conn)
