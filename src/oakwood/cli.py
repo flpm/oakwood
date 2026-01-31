@@ -314,6 +314,10 @@ def interactive_mode() -> None:
             if isbn:
                 _run_verification(conn, isbn)
 
+        if choice != "browse":
+            ui.console.print()
+            ui.console.input("[dim]Press Enter to continue[/dim]")
+
     conn.close()
     ui.console.print("\n[dim]Goodbye![/dim]")
 
