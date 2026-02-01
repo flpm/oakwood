@@ -111,12 +111,18 @@ class MainScreen(Screen):
             self._resume_scroll_y = None
 
     def on_key(self, event) -> None:
-        """Handle Escape from search input to return focus to table."""
+        """Handle Escape: from search input move to table; from table clear search."""
         if event.key == "escape":
             focused = self.app.focused
             if isinstance(focused, Input):
                 self._focus_table()
                 event.prevent_default()
+            elif isinstance(focused, DataTable):
+                search_input = self.query_one("#search-input", Input)
+                if search_input.value.strip():
+                    search_input.value = ""
+                    self._refresh_data()
+                    event.prevent_default()
 
     def action_focus_search(self) -> None:
         self.query_one("#search-input", Input).focus()
