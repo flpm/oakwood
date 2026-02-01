@@ -1,0 +1,300 @@
+/* Oakwood Book Catalogue - Warm Dark Theme */
+
+Screen {
+    background: #1a1410;
+}
+
+Header {
+    background: #2a2118;
+    color: #d4a04a;
+}
+
+Footer {
+    background: #2a2118;
+    color: #8a7e6a;
+}
+
+FooterKey {
+    background: #2a2118;
+    color: #d4a04a;
+    .footer-key--key {
+        background: #3a3020;
+        color: #d4a04a;
+    }
+    .footer-key--description {
+        color: #8a7e6a;
+    }
+}
+
+/* Stats Panel */
+StatsPanel {
+    height: 3;
+    padding: 1 2;
+    background: #2a2118;
+    color: #d4a04a;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+/* Book Table */
+BookTable {
+    height: 1fr;
+}
+
+BookTable > DataTable {
+    height: 1fr;
+    background: #1a1410;
+}
+
+DataTable {
+    background: #1a1410;
+    scrollbar-background: #2a2118;
+    scrollbar-color: #3a3020;
+    scrollbar-color-hover: #d4a04a;
+    scrollbar-color-active: #d4a04a;
+}
+
+DataTable > .datatable--header {
+    background: #2a2118;
+    color: #8a7e6a;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: #3a3020;
+    color: #e8dcc8;
+}
+
+DataTable > .datatable--even-row {
+    background: #1a1410;
+    color: #e8dcc8;
+}
+
+DataTable > .datatable--odd-row {
+    background: #1e1812;
+    color: #e8dcc8;
+}
+
+/* Search input */
+#search-input {
+    dock: top;
+    margin: 0 2;
+    height: 3;
+    background: #2a2118;
+    border: tall #3a3020;
+    color: #e8dcc8;
+}
+
+#search-input:focus {
+    border: tall #d4a04a;
+}
+
+/* Browse Screen */
+BrowseScreen {
+    align: center middle;
+}
+
+#browse-counter {
+    text-align: center;
+    color: #8a7e6a;
+    height: 1;
+    margin-bottom: 1;
+}
+
+#browse-panel {
+    width: 80;
+    max-height: 80%;
+    padding: 1 2;
+    background: #2a2118;
+    border: round #3a3020;
+    overflow-y: auto;
+}
+
+#browse-title {
+    text-style: bold;
+    color: #e8dcc8;
+}
+
+#browse-authors {
+    color: #8a7e6a;
+}
+
+#browse-details {
+    color: #8a7e6a;
+    margin-top: 1;
+}
+
+#browse-description {
+    color: #e8dcc8;
+    margin-top: 1;
+}
+
+/* Book Detail Screen */
+BookDetailScreen {
+    align: center middle;
+}
+
+#detail-panel {
+    width: 80;
+    max-height: 90%;
+    padding: 1 2;
+    background: #2a2118;
+    border: round #3a3020;
+    overflow-y: auto;
+}
+
+#detail-title {
+    text-style: bold;
+    color: #e8dcc8;
+}
+
+#detail-authors {
+    color: #8a7e6a;
+}
+
+.detail-field {
+    color: #e8dcc8;
+}
+
+.detail-label {
+    color: #8a7e6a;
+}
+
+.detail-status {
+    margin-top: 1;
+}
+
+/* Verify Screen */
+VerifyScreen {
+    align: center middle;
+}
+
+#verify-container {
+    width: 90;
+    max-height: 85%;
+    padding: 1 2;
+    background: #2a2118;
+    border: round #3a3020;
+    overflow-y: auto;
+}
+
+#verify-title {
+    text-style: bold;
+    color: #e8dcc8;
+    margin-bottom: 1;
+}
+
+#verify-status {
+    color: #8a7e6a;
+    text-align: center;
+    height: 3;
+}
+
+#verify-loading {
+    height: 5;
+    align: center middle;
+}
+
+.verify-field-name {
+    text-style: bold;
+    color: #d4a04a;
+    margin-top: 1;
+}
+
+.verify-local {
+    color: #e8dcc8;
+}
+
+.verify-api {
+    color: #d4a04a;
+}
+
+.verify-prompt {
+    color: #8a7e6a;
+    margin-top: 1;
+}
+
+#verify-summary {
+    margin-top: 1;
+}
+
+.verify-updated {
+    color: #6a9a4a;
+}
+
+.verify-skipped {
+    color: #8a7e6a;
+}
+
+/* Import Screen */
+ImportScreen {
+    align: center middle;
+}
+
+#import-container {
+    width: 90;
+    height: 85%;
+    padding: 1 2;
+    background: #2a2118;
+    border: round #3a3020;
+}
+
+#import-title {
+    text-style: bold;
+    color: #e8dcc8;
+    margin-bottom: 1;
+}
+
+#import-path-row {
+    height: 3;
+    margin-bottom: 1;
+}
+
+#import-path-input {
+    width: 1fr;
+    background: #1a1410;
+    border: tall #3a3020;
+    color: #e8dcc8;
+}
+
+#import-path-input:focus {
+    border: tall #d4a04a;
+}
+
+#import-button {
+    width: 12;
+    margin-left: 1;
+    background: #3a3020;
+    color: #d4a04a;
+    border: tall #3a3020;
+}
+
+#import-button:hover {
+    background: #d4a04a;
+    color: #1a1410;
+}
+
+#import-log {
+    height: 1fr;
+    background: #1a1410;
+    border: tall #3a3020;
+    scrollbar-background: #2a2118;
+    scrollbar-color: #3a3020;
+}
+
+/* Shared styles */
+.success {
+    color: #6a9a4a;
+}
+
+.error {
+    color: #c45a3a;
+}
+
+.muted {
+    color: #8a7e6a;
+}
+
+.accent {
+    color: #d4a04a;
+}

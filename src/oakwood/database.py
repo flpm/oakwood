@@ -14,7 +14,7 @@ def get_connection(db_path: Optional[Path] = None) -> sqlite3.Connection:
     """Get a database connection, creating the database if needed."""
     path = db_path or DEFAULT_DB_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path)
+    conn = sqlite3.connect(path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 

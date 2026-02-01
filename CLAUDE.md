@@ -1,23 +1,26 @@
 # Oakwood Book Catalogue
 
-A CLI tool for managing a personal book catalogue with support for importing books from Bookshelf iOS app CSV exports.
+A full-screen TUI for managing a personal book catalogue with support for importing books from Bookshelf iOS app CSV exports. Built with Textual.
 
 ## Project Structure
 
 ```
-books/
-├── src/oakwood/
-│   ├── cli.py          # Click-based CLI entry point
-│   ├── ui.py           # Rich UI components (tables, panels, prompts)
-│   ├── database.py     # SQLite operations
-│   ├── models.py       # Book dataclass (26 fields)
-│   ├── importer.py     # Bookshelf CSV import logic
-│   └── openlibrary.py  # Open Library API client for verification
-├── data/
-│   ├── bookshelf/      # CSV exports from Bookshelf app
-│   └── oakwood.db      # SQLite database (created on first run)
-├── notebooks/          # Jupyter notebooks for analysis
-└── .venv/              # Virtual environment
+src/oakwood/
+├── app.py                  # Textual App subclass, entry point, DB lifecycle
+├── oakwood.tcss            # Warm dark theme (amber/gold on dark brown)
+├── database.py             # SQLite operations
+├── models.py               # Book dataclass (26 fields)
+├── importer.py             # Bookshelf CSV import logic
+├── openlibrary.py          # Open Library API client for verification
+├── screens/
+│   ├── main.py             # Stats + search + DataTable of recent books
+│   ├── browse.py           # Single-book view with n/p/f/b navigation
+│   ├── book_detail.py      # Full book info panel
+│   ├── verify.py           # Multi-phase: loading -> comparison -> field resolution -> summary
+│   └── import_csv.py       # File path input + progress + per-book log
+└── widgets/
+    ├── stats_panel.py      # "N books | M shelves" bar
+    └── book_table.py       # DataTable wrapper with ISBN tracking + BookSelected message
 ```
 
 ## Development
@@ -29,33 +32,30 @@ source .venv/bin/activate
 # Install in development mode
 pip install -e .
 
-# Run CLI
-oakwood --help
+# Run TUI
+oakwood
 ```
 
-## Commands
+## Screens
 
-- `oakwood` - Interactive menu mode
-- `oakwood import <csv>` - Import books from Bookshelf CSV
-- `oakwood list [--shelf NAME]` - List books
-- `oakwood stats` - Collection statistics
-- `oakwood info <isbn>` - Book details
-- `oakwood search <query>` - Search by title/author/ISBN
-- `oakwood verify <isbn>` - Verify book against Open Library API
+- **MainScreen** (default) - Stats bar, search input, book table sorted by date added. Keys: `/` search, `b` browse, `i` import, `q` quit, Enter for details.
+- **BrowseScreen** - Single-book view with navigation. Keys: `n` next, `p` prev, `f` +10, `b` -10, `d` details, Escape back.
+- **BookDetailScreen** - Full book info panel. Keys: `v` verify, Escape back.
+- **VerifyScreen** - Multi-phase verification against Open Library API. Keys: `1` keep local, `2` use API, `s` skip, Escape back.
+- **ImportScreen** - CSV file path input + import button + per-book progress log. Escape back.
 
 ## Dependencies
 
-- click - CLI framework
-- rich - Terminal UI (tables, spinners, colors)
+- textual - Full-screen TUI framework
 - pandas - CSV parsing
 
 ## Database
 
-SQLite database at `data/oakwood.db`. Uses ISBN as unique identifier for duplicate detection during import. Books have `verified` and `last_verified` fields for tracking verification status.
+SQLite database at `data/oakwood.db`. Uses ISBN as unique identifier for duplicate detection during import. Books have `verified` and `last_verified` fields for tracking verification status. Connection uses `check_same_thread=False` for Textual worker thread compatibility.
 
 ## Verification
 
-The `verify` command compares book data against Open Library API. Compares 7 fields: title, authors, page_count, publisher, published_at, categories, description. User can choose to keep local value, use API value, or skip each differing field. Books are marked as verified with timestamp after completion.
+The verify flow compares book data against Open Library API. Compares 7 fields: title, authors, page_count, publisher, published_at, categories, description. User can choose to keep local value, use API value, or skip each differing field. Books are marked as verified with timestamp after completion.
 
 ## CSV Format
 
