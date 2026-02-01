@@ -14,7 +14,6 @@ src/oakwood/
 ├── openlibrary.py          # Open Library API client for verification
 ├── screens/
 │   ├── main.py             # Stats + search + DataTable of recent books
-│   ├── browse.py           # Single-book view with n/p/f/b navigation
 │   ├── book_detail.py      # Full book info panel
 │   ├── verify.py           # Multi-phase: loading -> comparison -> field resolution -> summary
 │   └── import_csv.py       # File path input + progress + per-book log
@@ -38,8 +37,7 @@ oakwood
 
 ## Screens
 
-- **MainScreen** (default) - Stats bar, search input, book table sorted by date added. Keys: `/` search, `b` browse, `i` import, `q` quit, Enter for details.
-- **BrowseScreen** - Single-book view with navigation. Keys: `n` next, `p` prev, `f` +10, `b` -10, `d` details, Escape back.
+- **MainScreen** (default) - Stats bar, search input, book table sorted by date added. Keys: `/` search, `i` import, `q` quit, Enter for details.
 - **BookDetailScreen** - Full book info panel. Keys: `v` verify, Escape back.
 - **VerifyScreen** - Multi-phase verification against Open Library API. Keys: `1` keep local, `2` use API, `s` skip, Escape back.
 - **ImportScreen** - CSV file path input + import button + per-book progress log. Escape back.
