@@ -46,13 +46,17 @@ class MainScreen(Screen):
             pass
 
     def on_screen_resume(self) -> None:
-        """Refresh data when returning from another screen."""
+        """Refresh data when returning from another screen, preserving sort order."""
+        self._refresh_stats()
+        conn = self.app.db
         query = self.query_one("#search-input", Input).value.strip()
         if query:
-            self._refresh_stats()
-            self._do_search(query)
+            books = list(search_books(conn, query))
         else:
-            self._refresh_data()
+            books = get_all_books_by_date(conn)
+        book_table = self.query_one(BookTable)
+        book_table.refresh_books(books)
+        self._restore_cursor(book_table)
         self._focus_table()
 
     def _refresh_stats(self) -> None:
