@@ -4,11 +4,6 @@ Screen {
     background: #1a1410;
 }
 
-Header {
-    background: #2a2118;
-    color: #d4a04a;
-}
-
 Footer {
     background: #2a2118;
     color: #8a7e6a;
@@ -29,10 +24,9 @@ FooterKey {
 /* Stats Panel */
 StatsPanel {
     height: 1;
-    padding: 0 2;
+    padding: 0 1;
     background: #2a2118;
     color: #d4a04a;
-    text-style: bold;
 }
 
 /* Book Table */
@@ -76,16 +70,16 @@ DataTable > .datatable--odd-row {
 
 /* Search input */
 #search-input {
-    dock: top;
     margin: 0;
     height: 3;
-    background: #2a2118;
-    border: tall #3a3020;
+    background: #1a1410;
+    border: round #3a3020;
     color: #e8dcc8;
+    padding: 0 0;
 }
 
 #search-input:focus {
-    border: tall #d4a04a;
+    border: round #d4a04a;
 }
 
 /* Book Detail Screen */

@@ -217,6 +217,17 @@ def get_all_books_by_date(conn: sqlite3.Connection) -> list[Book]:
     return [_row_to_book(row) for row in cursor]
 
 
+def get_last_added_date(conn: sqlite3.Connection) -> Optional[date]:
+    """Get the date of the most recently added book."""
+    cursor = conn.execute(
+        "SELECT date_added FROM books WHERE date_added IS NOT NULL ORDER BY date_added DESC LIMIT 1"
+    )
+    row = cursor.fetchone()
+    if row:
+        return _parse_date(row[0])
+    return None
+
+
 def search_books(conn: sqlite3.Connection, query: str) -> Iterator[Book]:
     """Search books by title, author, or ISBN."""
     pattern = f"%{query}%"

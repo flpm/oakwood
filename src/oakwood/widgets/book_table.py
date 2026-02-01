@@ -67,6 +67,26 @@ class BookTable(Static):
         if isbn:
             self.post_message(self.BookSelected(isbn))
 
+    def get_isbn_list(self) -> list[str]:
+        """Return ISBNs in current display order."""
+        return list(self._isbn_map.values())
+
+    def get_scroll_y(self) -> float:
+        """Return the current vertical scroll offset."""
+        return self.query_one(DataTable).scroll_y
+
+    def select_by_isbn(self, isbn: str, scroll_y: float | None = None) -> None:
+        """Move the cursor to the row with the given ISBN and optionally restore scroll."""
+        table = self.query_one(DataTable)
+        for idx, stored_isbn in enumerate(self._isbn_map.values()):
+            if stored_isbn == isbn:
+                table.move_cursor(row=idx)
+                break
+        if scroll_y is not None:
+            # move_cursor defers auto-scroll via call_after_refresh;
+            # schedule our restore after that so it wins.
+            table.call_after_refresh(table.scroll_to, y=scroll_y, animate=False)
+
     def get_selected_isbn(self) -> str | None:
         """Return the ISBN of the currently highlighted row."""
         table = self.query_one(DataTable)

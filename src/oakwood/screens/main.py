@@ -3,10 +3,18 @@
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.screen import Screen
-from textual.widgets import DataTable, Footer, Header, Input
+from textual.widgets import DataTable, Footer, Input
 from textual import work
 
-from ..database import get_all_books_by_date, get_book_count, get_shelf_counts, search_books
+from .. import __version__
+from ..database import (
+    DEFAULT_DB_PATH,
+    get_all_books_by_date,
+    get_book_count,
+    get_last_added_date,
+    get_shelf_counts,
+    search_books,
+)
 from ..widgets.book_table import BookTable
 from ..widgets.stats_panel import StatsPanel
 
@@ -21,7 +29,6 @@ class MainScreen(Screen):
     ]
 
     def compose(self) -> ComposeResult:
-        yield Header()
         yield StatsPanel()
         yield Input(placeholder="Search by title, author, or ISBN...", id="search-input")
         yield BookTable()
@@ -40,17 +47,31 @@ class MainScreen(Screen):
 
     def on_screen_resume(self) -> None:
         """Refresh data when returning from another screen."""
-        self._refresh_data()
+        query = self.query_one("#search-input", Input).value.strip()
+        if query:
+            self._refresh_stats()
+            self._do_search(query)
+        else:
+            self._refresh_data()
         self._focus_table()
 
-    def _refresh_data(self) -> None:
-        """Load data synchronously from the database."""
+    def _refresh_stats(self) -> None:
+        """Update the stats panel only."""
         conn = self.app.db
         book_count = get_book_count(conn)
         shelf_counts = get_shelf_counts(conn)
-        books = get_all_books_by_date(conn)
-        self.query_one(StatsPanel).update_stats(book_count, len(shelf_counts))
-        self.query_one(BookTable).load_books(books)
+        last_added = get_last_added_date(conn)
+        self.query_one(StatsPanel).update_stats(
+            __version__, str(DEFAULT_DB_PATH), book_count, len(shelf_counts), last_added
+        )
+
+    def _refresh_data(self) -> None:
+        """Load stats and all books."""
+        self._refresh_stats()
+        books = get_all_books_by_date(self.app.db)
+        book_table = self.query_one(BookTable)
+        book_table.load_books(books)
+        self._restore_cursor(book_table)
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "search-input":
@@ -72,7 +93,18 @@ class MainScreen(Screen):
 
     def _update_table(self, books: list) -> None:
         """Update just the book table (used by search worker)."""
-        self.query_one(BookTable).load_books(books)
+        book_table = self.query_one(BookTable)
+        book_table.load_books(books)
+        self._restore_cursor(book_table)
+
+    def _restore_cursor(self, book_table: BookTable) -> None:
+        """Restore cursor and scroll position to the previously selected book, if any."""
+        isbn = getattr(self, "_resume_isbn", None)
+        scroll_y = getattr(self, "_resume_scroll_y", None)
+        if isbn:
+            book_table.select_by_isbn(isbn, scroll_y=scroll_y)
+            self._resume_isbn = None
+            self._resume_scroll_y = None
 
     def on_key(self, event) -> None:
         """Handle Escape from search input to return focus to table."""
@@ -91,7 +123,11 @@ class MainScreen(Screen):
 
     def on_book_table_book_selected(self, event: BookTable.BookSelected) -> None:
         from .book_detail import BookDetailScreen
-        self.app.push_screen(BookDetailScreen(isbn=event.isbn))
+        book_table = self.query_one(BookTable)
+        self._resume_isbn = event.isbn
+        self._resume_scroll_y = book_table.get_scroll_y()
+        isbn_list = book_table.get_isbn_list()
+        self.app.push_screen(BookDetailScreen(isbn=event.isbn, isbn_list=isbn_list))
 
     def action_quit(self) -> None:
         self.app.exit()

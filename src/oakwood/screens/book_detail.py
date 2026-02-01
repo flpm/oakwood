@@ -92,25 +92,50 @@ class BookDetailScreen(Screen):
 
     BINDINGS = [
         Binding("v", "verify", "Verify"),
+        Binding("n", "next_book", "Next"),
+        Binding("p", "prev_book", "Previous"),
         Binding("escape", "go_back", "Back"),
     ]
 
-    def __init__(self, isbn: str) -> None:
+    def __init__(self, isbn: str, isbn_list: list[str] | None = None) -> None:
         super().__init__()
         self.isbn = isbn
+        self._isbn_list = isbn_list or []
+        self._index = self._isbn_list.index(isbn) if isbn in self._isbn_list else -1
 
     def compose(self) -> ComposeResult:
         yield Static("", id="detail-panel")
         yield Footer()
 
     def on_mount(self) -> None:
+        self._display_book()
+
+    def _display_book(self) -> None:
         book = get_book_by_isbn(self.app.db, self.isbn)
         if book:
             self._book = book
-            self.query_one("#detail-panel").update(_format_book_info(book))
+            info = _format_book_info(book)
+            if self._isbn_list:
+                pos = f"[#8a7e6a]{self._index + 1} of {len(self._isbn_list)}[/#8a7e6a]"
+                info = pos + "\n\n" + info
+            self.query_one("#detail-panel").update(info)
         else:
-            self.query_one("#detail-panel").update(f"[#c45a3a]No book found with ISBN: {self.isbn}[/#c45a3a]")
+            self.query_one("#detail-panel").update(
+                f"[#c45a3a]No book found with ISBN: {self.isbn}[/#c45a3a]"
+            )
             self._book = None
+
+    def action_next_book(self) -> None:
+        if self._isbn_list and self._index < len(self._isbn_list) - 1:
+            self._index += 1
+            self.isbn = self._isbn_list[self._index]
+            self._display_book()
+
+    def action_prev_book(self) -> None:
+        if self._isbn_list and self._index > 0:
+            self._index -= 1
+            self.isbn = self._isbn_list[self._index]
+            self._display_book()
 
     def action_verify(self) -> None:
         if self._book:
