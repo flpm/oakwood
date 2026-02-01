@@ -16,7 +16,6 @@ class MainScreen(Screen):
 
     BINDINGS = [
         Binding("slash", "focus_search", "Search", key_display="/"),
-        Binding("b", "browse", "Browse"),
         Binding("i", "import_csv", "Import"),
         Binding("q", "quit", "Quit"),
     ]
@@ -29,9 +28,8 @@ class MainScreen(Screen):
         yield Footer()
 
     def on_mount(self) -> None:
-        self._load_data()
-        # Focus the table so key bindings work; user presses / to search
-        self.set_timer(0.1, self._focus_table)
+        self._refresh_data()
+        self._focus_table()
 
     def _focus_table(self) -> None:
         try:
@@ -42,24 +40,16 @@ class MainScreen(Screen):
 
     def on_screen_resume(self) -> None:
         """Refresh data when returning from another screen."""
-        self._load_data()
-        self.set_timer(0.1, self._focus_table)
+        self._refresh_data()
+        self._focus_table()
 
-    @work(exclusive=True, group="load", thread=True)
-    def _load_data(self) -> None:
+    def _refresh_data(self) -> None:
+        """Load data synchronously from the database."""
         conn = self.app.db
-        try:
-            book_count = get_book_count(conn)
-            shelf_counts = get_shelf_counts(conn)
-            books = get_all_books_by_date(conn)
-        except Exception:
-            book_count = 0
-            shelf_counts = {}
-            books = []
-        self.app.call_from_thread(self._update_display, book_count, len(shelf_counts), books)
-
-    def _update_display(self, book_count: int, shelf_count: int, books: list) -> None:
-        self.query_one(StatsPanel).update_stats(book_count, shelf_count)
+        book_count = get_book_count(conn)
+        shelf_counts = get_shelf_counts(conn)
+        books = get_all_books_by_date(conn)
+        self.query_one(StatsPanel).update_stats(book_count, len(shelf_counts))
         self.query_one(BookTable).load_books(books)
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -78,7 +68,11 @@ class MainScreen(Screen):
             books = list(search_books(conn, query.strip()))
         else:
             books = get_all_books_by_date(conn)
-        self.app.call_from_thread(self.query_one(BookTable).load_books, books)
+        self.app.call_from_thread(self._update_table, books)
+
+    def _update_table(self, books: list) -> None:
+        """Update just the book table (used by search worker)."""
+        self.query_one(BookTable).load_books(books)
 
     def on_key(self, event) -> None:
         """Handle Escape from search input to return focus to table."""
@@ -90,11 +84,6 @@ class MainScreen(Screen):
 
     def action_focus_search(self) -> None:
         self.query_one("#search-input", Input).focus()
-
-    def action_browse(self) -> None:
-        from .browse import BrowseScreen
-        isbn = self.query_one(BookTable).get_selected_isbn()
-        self.app.push_screen(BrowseScreen(start_isbn=isbn))
 
     def action_import_csv(self) -> None:
         from .import_csv import ImportScreen

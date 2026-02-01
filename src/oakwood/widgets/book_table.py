@@ -14,25 +14,48 @@ class BookTable(Static):
             self.isbn = isbn
             super().__init__()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._isbn_map: dict = {}  # row_key -> isbn
+        self._columns_added = False
+
     def compose(self):
         yield DataTable()
 
     def on_mount(self) -> None:
-        self._isbn_map: dict = {}  # row_key -> isbn
         table = self.query_one(DataTable)
         table.cursor_type = "row"
-        table.add_columns("Title", "Authors", "Shelf", "Added")
+
+    def _ensure_columns(self) -> None:
+        """Add columns sized to the terminal width."""
+        if self._columns_added:
+            return
+        self._columns_added = True
+        table = self.query_one(DataTable)
+        # Use terminal width (available before layout) minus scrollbar
+        width = self.app.size.width - 2
+        self._w_title = max(30, int(width * 0.40))
+        self._w_authors = max(20, int(width * 0.25))
+        w_shelf = max(12, int(width * 0.20))
+        w_added = max(10, int(width * 0.15))
+        table.add_column("Title", width=self._w_title, key="title")
+        table.add_column("Authors", width=self._w_authors, key="authors")
+        table.add_column("Shelf", width=w_shelf, key="shelf")
+        table.add_column("Added", width=w_added, key="added")
 
     def load_books(self, books: list) -> None:
-        """Populate the table with books. Each book must have isbn, title, authors, bookshelf, date_added."""
+        """Populate the table with books."""
         table = self.query_one(DataTable)
+        self._ensure_columns()
         table.clear()
         self._isbn_map.clear()
+        title_max = getattr(self, "_w_title", 60)
+        authors_max = getattr(self, "_w_authors", 30)
         for book in books:
             date_str = str(book.date_added) if book.date_added else ""
             row_key = table.add_row(
-                book.display_title(60),
-                book.display_authors(30),
+                book.display_title(title_max),
+                book.display_authors(authors_max),
                 book.bookshelf or "",
                 date_str,
             )
