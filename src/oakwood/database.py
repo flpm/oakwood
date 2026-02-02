@@ -7,7 +7,7 @@ from typing import Iterator, Optional
 
 from .models import Book
 
-DEFAULT_DB_PATH = Path(__file__).parent.parent.parent.parent / "data" / "oakwood.db"
+DEFAULT_DB_PATH = Path(__file__).parent.parent.parent / "data" / "oakwood.db"
 
 
 def get_connection(db_path: Optional[Path] = None) -> sqlite3.Connection:

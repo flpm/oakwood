@@ -3,6 +3,7 @@
 from textual.app import App
 
 from .database import get_connection, init_db
+from .settings import load_settings
 
 
 class OakwoodApp(App):
@@ -18,7 +19,8 @@ class OakwoodApp(App):
 
     def on_mount(self) -> None:
         """Create DB connection and initialize schema on mount."""
-        self.db = get_connection()
+        self._settings = load_settings()
+        self.db = get_connection(self._settings.resolve_db_path())
         init_db(self.db)
         from .screens.main import MainScreen
         self.push_screen(MainScreen())

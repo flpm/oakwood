@@ -8,7 +8,6 @@ from textual import work
 
 from .. import __version__
 from ..database import (
-    DEFAULT_DB_PATH,
     get_all_books_by_date,
     get_book_count,
     get_last_added_date,
@@ -66,8 +65,9 @@ class MainScreen(Screen):
         book_count = get_book_count(conn)
         shelf_counts = get_shelf_counts(conn)
         last_added = get_last_added_date(conn)
+        db_display = self.app._settings.db_path
         self.query_one(StatsPanel).update_stats(
-            __version__, str(DEFAULT_DB_PATH), book_count, len(shelf_counts), last_added
+            __version__, db_display, book_count, len(shelf_counts), last_added
         )
 
     def _refresh_data(self) -> None:

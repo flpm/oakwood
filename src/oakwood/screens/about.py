@@ -28,7 +28,8 @@ class AboutScreen(Screen):
         yield Static(
             f"[#d4a04a]{LOGO}[/#d4a04a]\n\n"
             f"v. {__version__}    YOUR PERSONAL LIBRARY CATALOGUE\n\n"
-            f"[#8a7e6a]{PROJECT_URL}[/#8a7e6a]",
+            f"[#8a7e6a]{PROJECT_URL}[/#8a7e6a]\n\n"
+            f"Configuration file: ~/.oakwood/oakwood-settings.json",
             id="about-panel",
         )
         yield Footer()
