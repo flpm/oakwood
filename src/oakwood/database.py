@@ -245,16 +245,36 @@ def search_books(conn: sqlite3.Connection, query: str) -> Iterator[Book]:
 
 # Allowed fields for update_book_fields
 _UPDATABLE_FIELDS = {
+    "book_id",
+    "isbn",
     "title",
+    "subtitle",
+    "bookshelf",
+    "date_added",
+    "wishlist",
+    "read",
+    "pages_read",
+    "number_of_copies",
+    "signed",
     "authors",
-    "page_count",
-    "publisher",
+    "language",
     "published_at",
-    "categories",
+    "publisher",
+    "page_count",
     "description",
+    "categories",
+    "format",
+    "series",
+    "volume",
+    "editors",
+    "translators",
+    "illustrators",
     "verified",
     "last_verified",
 }
+
+_BOOL_FIELDS = {"wishlist", "read", "signed", "verified"}
+_DATE_FIELDS = {"date_added", "published_at", "last_verified"}
 
 
 def update_book_fields(
@@ -287,10 +307,10 @@ def update_book_fields(
     for field, value in updates.items():
         set_parts.append(f"{field} = ?")
         # Handle date serialization
-        if field in ("published_at", "last_verified") and value is not None:
+        if field in _DATE_FIELDS and value is not None:
             if hasattr(value, "isoformat"):
                 value = value.isoformat()
-        elif field == "verified":
+        elif field in _BOOL_FIELDS:
             value = int(value)
         values.append(value)
 

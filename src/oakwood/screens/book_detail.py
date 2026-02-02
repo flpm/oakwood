@@ -91,6 +91,7 @@ class BookDetailScreen(Screen):
     """Full book information display."""
 
     BINDINGS = [
+        Binding("e", "edit_book", "Edit"),
         Binding("v", "verify", "Verify"),
         Binding("n", "next_book", "Next"),
         Binding("p", "prev_book", "Previous"),
@@ -137,10 +138,25 @@ class BookDetailScreen(Screen):
             self.isbn = self._isbn_list[self._index]
             self._display_book()
 
+    def action_edit_book(self) -> None:
+        if self._book:
+            from .book_edit import BookEditScreen
+            self.app.push_screen(BookEditScreen(isbn=self.isbn))
+
     def action_verify(self) -> None:
         if self._book:
             from .verify import VerifyScreen
             self.app.push_screen(VerifyScreen(isbn=self.isbn))
+
+    def on_screen_resume(self) -> None:
+        # Check if ISBN was changed during edit
+        edited_isbn = getattr(self.app, "_edited_isbn", None)
+        if edited_isbn:
+            self.isbn = edited_isbn
+            if self._isbn_list and self._index >= 0:
+                self._isbn_list[self._index] = edited_isbn
+            del self.app._edited_isbn
+        self._display_book()
 
     def action_go_back(self) -> None:
         self.app.pop_screen()

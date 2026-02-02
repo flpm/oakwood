@@ -235,6 +235,131 @@ ImportScreen {
     scrollbar-color: #3a3020;
 }
 
+/* Book Edit Screen */
+BookEditScreen {
+    align: center middle;
+}
+
+#edit-container {
+    width: 90;
+    max-height: 90%;
+    padding: 0 0 0 2;
+    background: #2a2118;
+    border: round #3a3020;
+    overflow-y: auto;
+    scrollbar-background: #2a2118;
+    scrollbar-color: #3a3020;
+    scrollbar-color-hover: #d4a04a;
+}
+
+#edit-heading {
+    text-style: bold;
+    color: #e8dcc8;
+    margin-bottom: 1;
+}
+
+#edit-error {
+    height: auto;
+    margin-bottom: 0;
+}
+
+.edit-section-header {
+    margin-top: 1;
+    margin-bottom: 0;
+}
+
+.edit-field-row {
+    height: 3;
+    margin: 0;
+}
+
+.edit-label-inline {
+    width: 18;
+    height: 3;
+    padding: 1 0;
+    color: #8a7e6a;
+}
+
+.edit-label {
+    color: #8a7e6a;
+    margin-top: 0;
+}
+
+.edit-input {
+    width: 1fr;
+    margin-right: 2;
+    background: #1a1410;
+    border: round #3a3020;
+    color: #e8dcc8;
+    padding: 0 0;
+}
+
+.edit-input:focus {
+    border: round #d4a04a;
+}
+
+.edit-checkbox {
+    margin: 0;
+    padding: 0 1;
+    color: #e8dcc8;
+    height: 3;
+}
+
+.edit-textarea {
+    height: 12;
+    margin-right: 2;
+    background: #1a1410;
+    border: round #3a3020;
+    color: #e8dcc8;
+    margin-bottom: 1;
+}
+
+.edit-textarea:focus {
+    border: round #d4a04a;
+}
+
+#edit-buttons {
+    height: 3;
+    margin-top: 1;
+    align: center middle;
+}
+
+#edit-save {
+    margin-right: 2;
+    background: #3a3020;
+    color: #d4a04a;
+    border: tall #3a3020;
+}
+
+#edit-save:hover {
+    background: #d4a04a;
+    color: #1a1410;
+}
+
+#edit-cancel {
+    background: #2a2118;
+    color: #8a7e6a;
+    border: tall #3a3020;
+}
+
+#edit-cancel:hover {
+    background: #3a3020;
+    color: #e8dcc8;
+}
+
+/* About Screen */
+AboutScreen {
+    align: center middle;
+}
+
+#about-panel {
+    width: 60;
+    padding: 1 2;
+    background: #2a2118;
+    border: round #3a3020;
+    text-align: center;
+}
+
 /* Shared styles */
 .success {
     color: #6a9a4a;

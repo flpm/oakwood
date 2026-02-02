@@ -25,6 +25,7 @@ class MainScreen(Screen):
     BINDINGS = [
         Binding("slash", "focus_search", "Search", key_display="/"),
         Binding("i", "import_csv", "Import"),
+        Binding("a", "about", "About"),
         Binding("q", "quit", "Quit"),
     ]
 
@@ -138,6 +139,10 @@ class MainScreen(Screen):
         self._resume_scroll_y = book_table.get_scroll_y()
         isbn_list = book_table.get_isbn_list()
         self.app.push_screen(BookDetailScreen(isbn=event.isbn, isbn_list=isbn_list))
+
+    def action_about(self) -> None:
+        from .about import AboutScreen
+        self.app.push_screen(AboutScreen())
 
     def action_quit(self) -> None:
         self.app.exit()
