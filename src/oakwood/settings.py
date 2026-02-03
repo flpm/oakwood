@@ -19,19 +19,19 @@ class Settings:
     covers_path: str = ""
 
     def resolve_db_path(self) -> Path:
-        """Resolve db_path to an absolute Path."""
+        """Resolve db_path to an absolute Path (relative to ~/.oakwood/)."""
         p = Path(self.db_path).expanduser()
         if not p.is_absolute():
-            p = _PROJECT_ROOT / p
+            p = _OAKWOOD_DIR / p
         return p.resolve()
 
     def resolve_covers_path(self) -> Optional[Path]:
-        """Resolve covers_path to an absolute Path, or None if empty."""
+        """Resolve covers_path to an absolute Path (relative to ~/.oakwood/), or None if empty."""
         if not self.covers_path:
             return None
         p = Path(self.covers_path).expanduser()
         if not p.is_absolute():
-            p = _PROJECT_ROOT / p
+            p = _OAKWOOD_DIR / p
         return p.resolve()
 
 
