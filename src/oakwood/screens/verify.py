@@ -1,4 +1,8 @@
-"""Verify screen for comparing book data against Open Library API."""
+"""Verify screen for comparing book data against Open Library API.
+
+Implements a multi-phase workflow: fetch API data, show a comparison
+table, walk through differing fields one by one, and display a summary.
+"""
 
 from datetime import date
 
@@ -27,11 +31,18 @@ VERIFIABLE_FIELDS = [
 class VerifyScreen(Screen):
     """Multi-phase verification screen.
 
-    Phases:
-    1 - Loading (fetching from Open Library)
-    2 - Comparison table (showing differences)
-    3 - Field-by-field resolution
-    4 - Summary
+    Phases
+    ------
+    1. Loading — fetching data from the Open Library API.
+    2. Comparison table — showing fields that differ.
+    3. Field resolution — user picks local value, API value, or skip for
+       each differing field.
+    4. Summary — applied updates and verification timestamp.
+
+    Parameters
+    ----------
+    isbn : str
+        ISBN of the book to verify.
     """
 
     BINDINGS = [
@@ -55,6 +66,7 @@ class VerifyScreen(Screen):
         self._skipped_fields: list[str] = []
 
     def compose(self) -> ComposeResult:
+        """Build the screen layout with all phase widgets."""
         with VerticalScroll(id="verify-container"):
             yield Static("", id="verify-title")
             yield LoadingIndicator(id="verify-loading")
@@ -65,6 +77,7 @@ class VerifyScreen(Screen):
         yield Footer()
 
     def on_mount(self) -> None:
+        """Load the local book and start the API fetch."""
         self._book = get_book_by_isbn(self.app.db, self.isbn)
         if not self._book:
             self.query_one("#verify-status").update(
@@ -86,6 +99,7 @@ class VerifyScreen(Screen):
 
     @work(exclusive=True, thread=True)
     def _fetch_api_data(self) -> None:
+        """Fetch book metadata from Open Library in a background thread."""
         try:
             api_book = fetch_book(self.isbn)
             self.app.call_from_thread(self._on_api_data, api_book)
@@ -93,10 +107,27 @@ class VerifyScreen(Screen):
             self.app.call_from_thread(self._on_api_error, str(e))
 
     def _on_api_error(self, error: str) -> None:
+        """Display an error message when the API request fails.
+
+        Parameters
+        ----------
+        error : str
+            Human-readable error description.
+        """
         self.query_one("#verify-loading").display = False
         self.query_one("#verify-status").update(f"[#c45a3a]{error}[/#c45a3a]")
 
     def _on_api_data(self, api_book) -> None:
+        """Compare local and API data, then advance to the appropriate phase.
+
+        If all verifiable fields match, the book is automatically marked
+        as verified. Otherwise the comparison table is shown.
+
+        Parameters
+        ----------
+        api_book : OpenLibraryBook
+            Metadata retrieved from the API.
+        """
         self._api_book = api_book
         self.query_one("#verify-loading").display = False
 
@@ -126,6 +157,7 @@ class VerifyScreen(Screen):
         self._show_comparison_table()
 
     def _show_comparison_table(self) -> None:
+        """Populate and display the side-by-side comparison table."""
         self.query_one("#verify-status").update(
             "[#8a7e6a]Differences found. Press Enter to resolve field by field.[/#8a7e6a]"
         )
@@ -148,6 +180,11 @@ class VerifyScreen(Screen):
         self._show_field_prompt()
 
     def _show_field_prompt(self) -> None:
+        """Display the prompt for the current differing field.
+
+        Automatically advances to the summary phase when all fields have
+        been resolved.
+        """
         if self._current_field_idx >= len(self._differences):
             self._finish_verification()
             return
@@ -166,6 +203,7 @@ class VerifyScreen(Screen):
         self.query_one("#verify-field-prompt").display = True
 
     def action_choose_local(self) -> None:
+        """Keep the local value for the current field (bound to ``1``)."""
         if self.phase != 3:
             return
         field, _, _ = self._differences[self._current_field_idx]
@@ -174,6 +212,7 @@ class VerifyScreen(Screen):
         self._show_field_prompt()
 
     def action_choose_api(self) -> None:
+        """Accept the API value for the current field (bound to ``2``)."""
         if self.phase != 3:
             return
         field, _, _ = self._differences[self._current_field_idx]
@@ -184,6 +223,7 @@ class VerifyScreen(Screen):
         self._show_field_prompt()
 
     def action_choose_skip(self) -> None:
+        """Skip the current field without changing it (bound to ``s``)."""
         if self.phase != 3:
             return
         field, _, _ = self._differences[self._current_field_idx]
@@ -192,6 +232,7 @@ class VerifyScreen(Screen):
         self._show_field_prompt()
 
     def _finish_verification(self) -> None:
+        """Apply accumulated updates, mark verified, and show the summary."""
         self.phase = 4
         self.query_one("#verify-field-prompt").display = False
         self.query_one("#verify-table").display = False
@@ -214,4 +255,5 @@ class VerifyScreen(Screen):
         self.query_one("#verify-summary").display = True
 
     def action_go_back(self) -> None:
+        """Pop this screen and return to book detail."""
         self.app.pop_screen()

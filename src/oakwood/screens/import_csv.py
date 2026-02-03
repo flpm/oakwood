@@ -1,4 +1,8 @@
-"""Import screen for importing books from CSV files."""
+"""Import screen for importing books from CSV files.
+
+Provides a file path input, an import button, and a scrollable log that
+shows per-book progress and a final summary.
+"""
 
 from pathlib import Path
 
@@ -13,13 +17,14 @@ from ..importer import import_csv
 
 
 class ImportScreen(Screen):
-    """CSV import with file path input, progress log, and summary."""
+    """CSV import screen with file path input, progress log, and summary."""
 
     BINDINGS = [
         Binding("escape", "go_back", "Back"),
     ]
 
     def compose(self) -> ComposeResult:
+        """Build the import screen layout."""
         with Vertical(id="import-container"):
             yield Static("[bold]Import Books from CSV[/bold]", id="import-title")
             with Horizontal(id="import-path-row"):
@@ -29,14 +34,17 @@ class ImportScreen(Screen):
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Start the import when the Import button is pressed."""
         if event.button.id == "import-button":
             self._start_import()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Start the import when Enter is pressed in the path input."""
         if event.input.id == "import-path-input":
             self._start_import()
 
     def _start_import(self) -> None:
+        """Validate the file path and launch the background import worker."""
         path_str = self.query_one("#import-path-input", Input).value.strip()
         if not path_str:
             self._log("[#c45a3a]Please enter a CSV file path.[/#c45a3a]")
@@ -53,10 +61,24 @@ class ImportScreen(Screen):
         self._run_import(path)
 
     def _log(self, message: str) -> None:
+        """Append a Rich markup message to the import log.
+
+        Parameters
+        ----------
+        message : str
+            Rich markup text to display.
+        """
         self.query_one("#import-log", RichLog).write(message)
 
     @work(exclusive=True, thread=True)
     def _run_import(self, path: Path) -> None:
+        """Run the CSV import in a background thread.
+
+        Parameters
+        ----------
+        path : Path
+            Validated path to the CSV file.
+        """
         conn = self.app.db
 
         def on_book(book, is_new):
@@ -81,6 +103,15 @@ class ImportScreen(Screen):
             self.app.call_from_thread(self._re_enable_input)
 
     def _show_summary(self, added: int, skipped: int) -> None:
+        """Log the import summary and re-enable the input controls.
+
+        Parameters
+        ----------
+        added : int
+            Number of books added.
+        skipped : int
+            Number of books skipped.
+        """
         self._log("")
         if skipped > 0:
             self._log(f"[bold]Imported {added} books ({skipped} skipped)[/bold]")
@@ -89,8 +120,10 @@ class ImportScreen(Screen):
         self._re_enable_input()
 
     def _re_enable_input(self) -> None:
+        """Re-enable the path input and import button after an import."""
         self.query_one("#import-button", Button).disabled = False
         self.query_one("#import-path-input", Input).disabled = False
 
     def action_go_back(self) -> None:
+        """Pop this screen and return to the main screen."""
         self.app.pop_screen()

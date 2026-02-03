@@ -1,4 +1,10 @@
-"""SQLite database operations for Oakwood catalogue."""
+"""SQLite database operations for Oakwood catalogue.
+
+Provides functions for creating, reading, updating, and searching books
+in the SQLite database. Uses ISBN as the unique identifier for
+deduplication. The connection is created with ``check_same_thread=False``
+for Textual worker thread compatibility.
+"""
 
 import sqlite3
 from datetime import date
@@ -11,7 +17,18 @@ DEFAULT_DB_PATH = Path(__file__).parent.parent.parent / "data" / "oakwood.db"
 
 
 def get_connection(db_path: Optional[Path] = None) -> sqlite3.Connection:
-    """Get a database connection, creating the database if needed."""
+    """Open a SQLite connection, creating the database file if needed.
+
+    Parameters
+    ----------
+    db_path : Path, optional
+        Path to the database file. Defaults to ``DEFAULT_DB_PATH``.
+
+    Returns
+    -------
+    sqlite3.Connection
+        A connection with ``row_factory`` set to ``sqlite3.Row``.
+    """
     path = db_path or DEFAULT_DB_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, check_same_thread=False)
@@ -20,7 +37,16 @@ def get_connection(db_path: Optional[Path] = None) -> sqlite3.Connection:
 
 
 def init_db(conn: sqlite3.Connection) -> None:
-    """Initialize the database schema."""
+    """Create the books table and indexes if they do not exist.
+
+    Also runs migrations to add any columns introduced after the initial
+    schema (e.g. ``verified``, ``last_verified``).
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+    """
     conn.execute("""
         CREATE TABLE IF NOT EXISTS books (
             book_id TEXT PRIMARY KEY,
@@ -66,7 +92,18 @@ def init_db(conn: sqlite3.Connection) -> None:
 
 
 def _parse_date(date_str: Optional[str]) -> Optional[date]:
-    """Parse a date string to a date object."""
+    """Parse an ISO-format date string.
+
+    Parameters
+    ----------
+    date_str : str or None
+        A date string in ``YYYY-MM-DD`` format, or ``None``.
+
+    Returns
+    -------
+    date or None
+        The parsed date, or ``None`` if the input is empty or invalid.
+    """
     if not date_str:
         return None
     try:
@@ -76,7 +113,18 @@ def _parse_date(date_str: Optional[str]) -> Optional[date]:
 
 
 def _row_to_book(row: sqlite3.Row) -> Book:
-    """Convert a database row to a Book object."""
+    """Convert a database row to a Book instance.
+
+    Parameters
+    ----------
+    row : sqlite3.Row
+        A row from the ``books`` table.
+
+    Returns
+    -------
+    Book
+        A populated ``Book`` dataclass instance.
+    """
     return Book(
         book_id=row["book_id"],
         isbn=row["isbn"],
@@ -108,13 +156,36 @@ def _row_to_book(row: sqlite3.Row) -> Book:
 
 
 def book_exists(conn: sqlite3.Connection, isbn: str) -> bool:
-    """Check if a book with the given ISBN exists."""
+    """Check whether a book with the given ISBN exists.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+    isbn : str
+        The ISBN to look up.
+
+    Returns
+    -------
+    bool
+        ``True`` if a matching row exists.
+    """
     cursor = conn.execute("SELECT 1 FROM books WHERE isbn = ?", (isbn,))
     return cursor.fetchone() is not None
 
 
 def insert_book(conn: sqlite3.Connection, book: Book) -> None:
-    """Insert a book into the database."""
+    """Insert a book row into the database.
+
+    The caller is responsible for committing the transaction.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+    book : Book
+        The book to insert.
+    """
     conn.execute(
         """
         INSERT INTO books (
@@ -161,7 +232,22 @@ def insert_book(conn: sqlite3.Connection, book: Book) -> None:
 def get_all_books(
     conn: sqlite3.Connection, shelf: Optional[str] = None
 ) -> Iterator[Book]:
-    """Get all books, optionally filtered by shelf."""
+    """Yield all books, optionally filtered by shelf.
+
+    Results are ordered alphabetically by title.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+    shelf : str, optional
+        If provided, only return books on this shelf.
+
+    Yields
+    ------
+    Book
+        Books matching the filter criteria.
+    """
     if shelf:
         cursor = conn.execute(
             "SELECT * FROM books WHERE bookshelf = ? ORDER BY title", (shelf,)
@@ -173,7 +259,20 @@ def get_all_books(
 
 
 def get_book_by_isbn(conn: sqlite3.Connection, isbn: str) -> Optional[Book]:
-    """Get a book by its ISBN."""
+    """Look up a single book by ISBN.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+    isbn : str
+        The ISBN to look up.
+
+    Returns
+    -------
+    Book or None
+        The matching book, or ``None`` if not found.
+    """
     cursor = conn.execute("SELECT * FROM books WHERE isbn = ?", (isbn,))
     row = cursor.fetchone()
     if row:
@@ -182,13 +281,35 @@ def get_book_by_isbn(conn: sqlite3.Connection, isbn: str) -> Optional[Book]:
 
 
 def get_book_count(conn: sqlite3.Connection) -> int:
-    """Get the total number of books."""
+    """Return the total number of books in the database.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+
+    Returns
+    -------
+    int
+        Total book count.
+    """
     cursor = conn.execute("SELECT COUNT(*) FROM books")
     return cursor.fetchone()[0]
 
 
 def get_shelf_counts(conn: sqlite3.Connection) -> dict[str, int]:
-    """Get book counts grouped by shelf."""
+    """Return book counts grouped by shelf, ordered by count descending.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+
+    Returns
+    -------
+    dict of str to int
+        Mapping of shelf name to book count.
+    """
     cursor = conn.execute(
         "SELECT bookshelf, COUNT(*) as count FROM books GROUP BY bookshelf ORDER BY count DESC"
     )
@@ -196,7 +317,20 @@ def get_shelf_counts(conn: sqlite3.Connection) -> dict[str, int]:
 
 
 def get_format_counts(conn: sqlite3.Connection) -> dict[str, int]:
-    """Get book counts grouped by format."""
+    """Return book counts grouped by format, ordered by count descending.
+
+    Books with an empty format string are excluded.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+
+    Returns
+    -------
+    dict of str to int
+        Mapping of format name to book count.
+    """
     cursor = conn.execute(
         "SELECT format, COUNT(*) as count FROM books WHERE format != '' GROUP BY format ORDER BY count DESC"
     )
@@ -204,13 +338,38 @@ def get_format_counts(conn: sqlite3.Connection) -> dict[str, int]:
 
 
 def get_all_shelves(conn: sqlite3.Connection) -> list[str]:
-    """Get all unique shelf names."""
+    """Return all unique shelf names, sorted alphabetically.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+
+    Returns
+    -------
+    list of str
+        Sorted shelf names.
+    """
     cursor = conn.execute("SELECT DISTINCT bookshelf FROM books ORDER BY bookshelf")
     return [row["bookshelf"] for row in cursor]
 
 
 def get_all_books_by_date(conn: sqlite3.Connection) -> list[Book]:
-    """Get all books ordered by date added (most recent first)."""
+    """Return all books ordered by date added, most recent first.
+
+    Books without a date are sorted to the end, then alphabetically by
+    title.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+
+    Returns
+    -------
+    list of Book
+        All books in date-descending order.
+    """
     cursor = conn.execute(
         "SELECT * FROM books ORDER BY date_added IS NULL, date_added DESC, title"
     )
@@ -218,7 +377,19 @@ def get_all_books_by_date(conn: sqlite3.Connection) -> list[Book]:
 
 
 def get_last_added_date(conn: sqlite3.Connection) -> Optional[date]:
-    """Get the date of the most recently added book."""
+    """Return the date of the most recently added book.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+
+    Returns
+    -------
+    date or None
+        The most recent ``date_added`` value, or ``None`` if the database
+        is empty or no books have a date.
+    """
     cursor = conn.execute(
         "SELECT date_added FROM books WHERE date_added IS NOT NULL ORDER BY date_added DESC LIMIT 1"
     )
@@ -229,7 +400,20 @@ def get_last_added_date(conn: sqlite3.Connection) -> Optional[date]:
 
 
 def search_books(conn: sqlite3.Connection, query: str) -> Iterator[Book]:
-    """Search books by title, author, or ISBN."""
+    """Search books by title, author, or ISBN using a LIKE pattern.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+    query : str
+        The search term (matched as a substring).
+
+    Yields
+    ------
+    Book
+        Books whose title, authors, or ISBN contain *query*.
+    """
     pattern = f"%{query}%"
     cursor = conn.execute(
         """
@@ -282,16 +466,29 @@ def update_book_fields(
 ) -> bool:
     """Update specific fields for a book identified by ISBN.
 
-    Args:
-        conn: Database connection
-        isbn: Book ISBN to update
-        updates: Dictionary of field names to new values
+    Date values are serialised to ISO format and boolean values are
+    converted to integers before storage. The transaction is committed
+    automatically on success.
 
-    Returns:
-        True if the book was updated, False if not found
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+    isbn : str
+        ISBN of the book to update.
+    updates : dict of str to any
+        Mapping of field names to new values.
 
-    Raises:
-        ValueError: If an invalid field name is provided
+    Returns
+    -------
+    bool
+        ``True`` if a row was updated, ``False`` if no matching book was
+        found or *updates* was empty.
+
+    Raises
+    ------
+    ValueError
+        If *updates* contains a field name not in ``_UPDATABLE_FIELDS``.
     """
     # Validate field names
     invalid_fields = set(updates.keys()) - _UPDATABLE_FIELDS

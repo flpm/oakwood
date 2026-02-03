@@ -1,4 +1,9 @@
-"""Book edit screen for modifying book fields."""
+"""Book edit screen for modifying book fields.
+
+Renders a form with grouped sections for all editable book fields.
+Validates input, computes a diff against the original values, and
+persists only the changed fields.
+"""
 
 from datetime import date
 
@@ -79,7 +84,21 @@ _FIELD_SECTIONS = [
 
 
 def _book_field_value(book: Book, field: str) -> str | bool | int:
-    """Get a field value from a Book, formatted for widget display."""
+    """Get a field value from a Book, formatted for widget display.
+
+    Parameters
+    ----------
+    book : Book
+        The book instance.
+    field : str
+        Attribute name on the ``Book`` dataclass.
+
+    Returns
+    -------
+    str or bool or int
+        The value formatted for display: dates become ISO strings,
+        ``None`` becomes ``""``, and all other values are passed through.
+    """
     value = getattr(book, field)
     if isinstance(value, date):
         return value.isoformat()
@@ -91,7 +110,17 @@ def _book_field_value(book: Book, field: str) -> str | bool | int:
 
 
 class BookEditScreen(Screen):
-    """Screen for editing book fields."""
+    """Form screen for editing book fields.
+
+    Groups fields into sections and renders appropriate input widgets
+    (text input, textarea, checkbox) for each. Only changed fields are
+    persisted on save.
+
+    Parameters
+    ----------
+    isbn : str
+        ISBN of the book to edit.
+    """
 
     BINDINGS = [
         Binding("ctrl+s", "save", "Save", priority=True),
@@ -105,6 +134,7 @@ class BookEditScreen(Screen):
         self._original: dict[str, str | bool | int] = {}
 
     def compose(self) -> ComposeResult:
+        """Build the edit form with sections, inputs, and action buttons."""
         with VerticalScroll(id="edit-container"):
             yield Static("Edit Book", id="edit-heading")
             yield Static("", id="edit-error")
@@ -152,6 +182,7 @@ class BookEditScreen(Screen):
         yield Footer()
 
     def on_mount(self) -> None:
+        """Load the book and populate all form widgets."""
         self._book = get_book_by_isbn(self.app.db, self.isbn)
         if not self._book:
             self.query_one("#edit-error").update(
@@ -176,7 +207,15 @@ class BookEditScreen(Screen):
                     self.query_one(f"#{widget_id}", Input).value = str(value)
 
     def _collect_values(self) -> dict[str, str | bool | int | date | None]:
-        """Collect current widget values, converting types."""
+        """Collect current widget values, converting to native Python types.
+
+        Returns
+        -------
+        dict
+            Mapping of field name to its current widget value. Integer
+            and date fields are converted; invalid dates are stored as
+            the sentinel string ``"INVALID"``.
+        """
         values: dict = {}
         for _section_name, fields in _FIELD_SECTIONS:
             for field_name, _label, widget_type in fields:
@@ -215,7 +254,18 @@ class BookEditScreen(Screen):
     def _validate(
         self, values: dict,
     ) -> str | None:
-        """Validate field values. Returns error message or None."""
+        """Validate collected field values.
+
+        Parameters
+        ----------
+        values : dict
+            Output of ``_collect_values``.
+
+        Returns
+        -------
+        str or None
+            Human-readable error message, or ``None`` if valid.
+        """
         # Required fields
         for field in ("title", "isbn", "bookshelf"):
             v = values.get(field, "")
@@ -239,7 +289,18 @@ class BookEditScreen(Screen):
     def _compute_diff(
         self, values: dict,
     ) -> dict:
-        """Compute changed fields only."""
+        """Return only the fields whose values differ from the originals.
+
+        Parameters
+        ----------
+        values : dict
+            Output of ``_collect_values``.
+
+        Returns
+        -------
+        dict
+            Subset of *values* where the value has changed.
+        """
         diff: dict = {}
         for field_name, new_value in values.items():
             old_value = self._original.get(field_name)
@@ -264,21 +325,32 @@ class BookEditScreen(Screen):
         return diff
 
     def _show_error(self, message: str) -> None:
+        """Display a validation error in the error panel.
+
+        Parameters
+        ----------
+        message : str
+            Error text to display.
+        """
         self.query_one("#edit-error").update(f"[#c45a3a]{message}[/#c45a3a]")
 
     def _clear_error(self) -> None:
+        """Clear any displayed validation error."""
         self.query_one("#edit-error").update("")
 
     def action_save(self) -> None:
+        """Save changes (bound to ``Ctrl+S``)."""
         self._do_save()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle Save and Cancel button presses."""
         if event.button.id == "edit-save":
             self._do_save()
         elif event.button.id == "edit-cancel":
             self.action_cancel()
 
     def _do_save(self) -> None:
+        """Validate, compute diff, and persist changed fields."""
         if not self._book:
             return
 
@@ -309,4 +381,5 @@ class BookEditScreen(Screen):
         self.app.pop_screen()
 
     def action_cancel(self) -> None:
+        """Discard changes and return to the detail screen."""
         self.app.pop_screen()

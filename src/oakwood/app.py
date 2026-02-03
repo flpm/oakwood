@@ -1,4 +1,8 @@
-"""Textual TUI application for Oakwood book catalogue."""
+"""Textual TUI application for Oakwood book catalogue.
+
+Defines the ``OakwoodApp`` class (the Textual ``App`` subclass) and the
+``main`` entry point used by the ``oakwood`` console script.
+"""
 
 from textual.app import App
 
@@ -7,7 +11,16 @@ from .settings import load_settings
 
 
 class OakwoodApp(App):
-    """Oakwood Book Catalogue TUI."""
+    """Oakwood Book Catalogue TUI.
+
+    Manages the database connection lifecycle and pushes the initial
+    ``MainScreen`` on mount.
+
+    Attributes
+    ----------
+    db : sqlite3.Connection
+        Shared database connection, available after mount.
+    """
 
     TITLE = "Oakwood"
     SUB_TITLE = "Book Catalogue"
@@ -18,7 +31,7 @@ class OakwoodApp(App):
     ]
 
     def on_mount(self) -> None:
-        """Create DB connection and initialize schema on mount."""
+        """Load settings, open the database, and push the main screen."""
         self._settings = load_settings()
         self.db = get_connection(self._settings.resolve_db_path())
         init_db(self.db)
@@ -26,13 +39,13 @@ class OakwoodApp(App):
         self.push_screen(MainScreen())
 
     def on_unmount(self) -> None:
-        """Close DB connection on unmount."""
+        """Close the database connection when the app exits."""
         if hasattr(self, "db"):
             self.db.close()
 
 
 def main() -> None:
-    """Entry point for the oakwood command."""
+    """Entry point for the ``oakwood`` console script."""
     app = OakwoodApp()
     app.run()
 

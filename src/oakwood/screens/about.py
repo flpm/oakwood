@@ -18,13 +18,14 @@ PROJECT_URL = "https://oakwood.flpm.dev"
 
 
 class AboutScreen(Screen):
-    """Modal about dialog with logo, version, and URL."""
+    """Modal about dialog with logo, version, and project URL."""
 
     BINDINGS = [
         Binding("escape", "go_back", "Back"),
     ]
 
     def compose(self) -> ComposeResult:
+        """Display the logo, version, URL, and config path."""
         yield Static(
             f"[#d4a04a]{LOGO}[/#d4a04a]\n\n"
             f"v. {__version__}    YOUR PERSONAL LIBRARY CATALOGUE\n\n"
@@ -35,4 +36,5 @@ class AboutScreen(Screen):
         yield Footer()
 
     def action_go_back(self) -> None:
+        """Return to the main screen."""
         self.app.pop_screen()

@@ -72,3 +72,40 @@ The verify flow compares book data against Open Library API. Compares 7 fields: 
 ## CSV Format
 
 Imports from Bookshelf iOS app exports. Key fields: Book Id, ISBN, Title, Authors, Bookshelf, Publisher, Published At, Page Count, Format, Categories, Description, Series, Volume, Date added.
+
+## Documentation
+
+All Python code uses **numpydoc**-style docstrings. Follow these conventions when adding or updating docstrings:
+
+- **Module docstrings** — one-line summary, optionally followed by a blank line and an extended description.
+- **Class docstrings** — one-line summary, optional extended description, then an `Attributes` section for dataclasses and any class with notable public attributes.
+- **Function / method docstrings** — one-line summary, optional extended description, then applicable sections in this order: `Parameters`, `Returns` (or `Yields`), `Raises`, `Notes`, `Examples`.
+- Simple one-line docstrings are acceptable for trivial methods (e.g. `action_go_back`, `action_quit`).
+- Use `"""` triple-double-quotes, with the opening quotes on the same line as the summary.
+
+### Numpydoc section format
+
+```python
+def get_book_by_isbn(conn: sqlite3.Connection, isbn: str) -> Optional[Book]:
+    """Look up a single book by ISBN.
+
+    Parameters
+    ----------
+    conn : sqlite3.Connection
+        An open database connection.
+    isbn : str
+        The ISBN to look up.
+
+    Returns
+    -------
+    Book or None
+        The matching book, or ``None`` if not found.
+    """
+```
+
+### Rules
+
+- Parameter types should match the type annotations but use prose-friendly forms (e.g. `str or None` instead of `Optional[str]`, `list of str` instead of `list[str]`).
+- Use double backticks for inline code references in descriptions (e.g. `` ``None`` ``, `` ``Book`` ``).
+- Do not repeat the function signature in the docstring body.
+- Keep descriptions concise — one to two sentences per parameter is usually enough.
