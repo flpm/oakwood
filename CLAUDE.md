@@ -10,6 +10,7 @@ src/oakwood/
 ├── oakwood.tcss            # Warm dark theme (amber/gold on dark brown)
 ├── database.py             # SQLite operations
 ├── models.py               # Book dataclass (26 fields)
+├── settings.py             # Settings dataclass, load/save JSON from ~/.oakwood/
 ├── importer.py             # Bookshelf CSV import logic
 ├── openlibrary.py          # Open Library API client for verification
 ├── screens/
@@ -47,9 +48,22 @@ oakwood
 - textual - Full-screen TUI framework
 - pandas - CSV parsing
 
+## Settings
+
+Configuration is stored in `~/.oakwood/oakwood-settings.json`. The file is created with defaults on first launch. Users edit it directly and restart the app to apply changes.
+
+```json
+{
+  "db_path": "data/oakwood.db",
+  "covers_path": ""
+}
+```
+
+Relative paths are resolved from `~/.oakwood/`. Absolute paths and `~` expansion are supported.
+
 ## Database
 
-SQLite database at `data/oakwood.db`. Uses ISBN as unique identifier for duplicate detection during import. Books have `verified` and `last_verified` fields for tracking verification status. Connection uses `check_same_thread=False` for Textual worker thread compatibility.
+SQLite database at `~/.oakwood/data/oakwood.db` by default (configurable via `db_path` in settings). Created automatically if it does not exist. Uses ISBN as unique identifier for duplicate detection during import. Books have `verified` and `last_verified` fields for tracking verification status. Connection uses `check_same_thread=False` for Textual worker thread compatibility.
 
 ## Verification
 
