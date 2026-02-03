@@ -5,17 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "oakwood"
 version = "0.1.0"
-description = "A CLI tool for managing a personal book catalogue"
+description = "A tool for managing a personal book catalogue"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = [
-    "click>=8.0",
-    "rich>=13.0",
-    "pandas>=2.0",
-]
+dependencies = ["textual>=0.80.0", "pandas>=2.0"]
 
 [project.scripts]
-oakwood = "oakwood.cli:main"
+oakwood = "oakwood.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,4 +1,8 @@
-"""Open Library API client for book verification."""
+"""Open Library API client for book verification.
+
+Fetches book metadata from the Open Library Books API and returns it as
+an ``OpenLibraryBook`` dataclass for comparison with local catalogue data.
+"""
 
 import json
 import urllib.request
@@ -9,14 +13,36 @@ from typing import Optional
 
 
 class OpenLibraryError(Exception):
-    """Exception raised for Open Library API errors."""
+    """Raised when an Open Library API request fails or returns no data."""
 
     pass
 
 
 @dataclass
 class OpenLibraryBook:
-    """Parsed book data from Open Library API."""
+    """Book metadata retrieved from the Open Library API.
+
+    Only the fields used for verification are included. All fields
+    default to ``None`` so that missing data can be distinguished from
+    empty values.
+
+    Attributes
+    ----------
+    title : str or None
+        Book title.
+    authors : str or None
+        Comma-separated author names.
+    page_count : int or None
+        Number of pages.
+    publisher : str or None
+        First listed publisher name.
+    published_at : date or None
+        Publication date.
+    categories : str or None
+        Comma-separated subject names.
+    description : str or None
+        Book description (from excerpts).
+    """
 
     title: Optional[str] = None
     authors: Optional[str] = None
@@ -30,11 +56,28 @@ class OpenLibraryBook:
 def _parse_publish_date(date_str: Optional[str]) -> Optional[date]:
     """Parse a publish date string from Open Library.
 
-    Handles various formats:
-    - "2005" -> date(2005, 1, 1)
-    - "March 2005" -> date(2005, 3, 1)
-    - "March 21, 2005" -> date(2005, 3, 21)
-    - "2005-03-21" -> date(2005, 3, 21)
+    Handles several formats returned by the API.
+
+    Parameters
+    ----------
+    date_str : str or None
+        Raw date string from the API response.
+
+    Returns
+    -------
+    date or None
+        Parsed date, or ``None`` if the string is empty or unparseable.
+
+    Examples
+    --------
+    >>> _parse_publish_date("2005")
+    datetime.date(2005, 1, 1)
+    >>> _parse_publish_date("March 2005")
+    datetime.date(2005, 3, 1)
+    >>> _parse_publish_date("March 21, 2005")
+    datetime.date(2005, 3, 21)
+    >>> _parse_publish_date("2005-03-21")
+    datetime.date(2005, 3, 21)
     """
     if not date_str:
         return None
@@ -88,16 +131,23 @@ def _parse_publish_date(date_str: Optional[str]) -> Optional[date]:
 
 
 def fetch_book(isbn: str) -> OpenLibraryBook:
-    """Fetch book data from Open Library API.
+    """Fetch book metadata from the Open Library Books API.
 
-    Args:
-        isbn: The ISBN to look up
+    Parameters
+    ----------
+    isbn : str
+        The ISBN to look up.
 
-    Returns:
-        OpenLibraryBook with parsed data
+    Returns
+    -------
+    OpenLibraryBook
+        Parsed book metadata.
 
-    Raises:
-        OpenLibraryError: If the request fails or book is not found
+    Raises
+    ------
+    OpenLibraryError
+        If the HTTP request fails, the response is malformed, or the
+        ISBN is not found.
     """
     url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
 

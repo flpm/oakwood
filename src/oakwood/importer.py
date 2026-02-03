@@ -1,4 +1,8 @@
-"""Bookshelf CSV import logic for Oakwood catalogue."""
+"""Bookshelf CSV import logic for Oakwood catalogue.
+
+Reads CSV exports from the Bookshelf iOS app and inserts new books into
+the database, skipping duplicates based on ISBN.
+"""
 
 import sqlite3
 from datetime import date
@@ -12,7 +16,18 @@ from .models import Book
 
 
 def _parse_date(date_str: str) -> Optional[date]:
-    """Parse a date string from CSV."""
+    """Parse a date string from a CSV cell.
+
+    Parameters
+    ----------
+    date_str : str
+        Raw date value from the CSV. May be ``NaN`` or empty.
+
+    Returns
+    -------
+    date or None
+        Parsed date in ISO format, or ``None`` if unparseable.
+    """
     if pd.isna(date_str) or not date_str:
         return None
     try:
@@ -26,7 +41,18 @@ def _parse_date(date_str: str) -> Optional[date]:
 
 
 def _parse_int(value) -> int:
-    """Parse an integer value from CSV."""
+    """Parse an integer value from a CSV cell.
+
+    Parameters
+    ----------
+    value : any
+        Raw value from the CSV. May be ``NaN``.
+
+    Returns
+    -------
+    int
+        Parsed integer, or ``0`` if the value is missing or invalid.
+    """
     if pd.isna(value):
         return 0
     try:
@@ -36,7 +62,20 @@ def _parse_int(value) -> int:
 
 
 def _parse_bool(value) -> bool:
-    """Parse a boolean value from CSV."""
+    """Parse a boolean value from a CSV cell.
+
+    Accepts ``1``, ``true``, ``yes`` (case-insensitive) as truthy.
+
+    Parameters
+    ----------
+    value : any
+        Raw value from the CSV. May be ``NaN``.
+
+    Returns
+    -------
+    bool
+        Parsed boolean, or ``False`` if the value is missing.
+    """
     if pd.isna(value):
         return False
     if isinstance(value, bool):
@@ -49,14 +88,38 @@ def _parse_bool(value) -> bool:
 
 
 def _parse_str(value) -> str:
-    """Parse a string value from CSV."""
+    """Parse a string value from a CSV cell.
+
+    Parameters
+    ----------
+    value : any
+        Raw value from the CSV. May be ``NaN``.
+
+    Returns
+    -------
+    str
+        Stripped string, or ``""`` if the value is missing.
+    """
     if pd.isna(value):
         return ""
     return str(value).strip()
 
 
 def _row_to_book(row: pd.Series) -> Book:
-    """Convert a pandas row to a Book object."""
+    """Convert a pandas row to a Book instance.
+
+    Maps Bookshelf CSV column names to ``Book`` dataclass fields.
+
+    Parameters
+    ----------
+    row : pandas.Series
+        A single row from the CSV DataFrame.
+
+    Returns
+    -------
+    Book
+        A populated ``Book`` instance.
+    """
     return Book(
         book_id=_parse_str(row.get("Book Id", "")),
         isbn=_parse_str(row.get("ISBN", "")),
@@ -92,13 +155,23 @@ def import_csv(
 ) -> tuple[int, int]:
     """Import books from a Bookshelf CSV export.
 
-    Args:
-        csv_path: Path to the CSV file
-        conn: Database connection
-        on_book: Optional callback called for each book with (book, is_new) args
+    Books without an ISBN or whose ISBN already exists in the database are
+    skipped. The transaction is committed after all rows are processed.
 
-    Returns:
-        Tuple of (added_count, skipped_count)
+    Parameters
+    ----------
+    csv_path : Path
+        Path to the CSV file.
+    conn : sqlite3.Connection
+        An open database connection.
+    on_book : callable, optional
+        Callback invoked for each row as ``on_book(book, is_new)`` where
+        *is_new* is ``True`` when the book was inserted.
+
+    Returns
+    -------
+    tuple of (int, int)
+        ``(added_count, skipped_count)``.
     """
     df = pd.read_csv(csv_path)
 

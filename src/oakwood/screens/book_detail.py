@@ -1,0 +1,201 @@
+"""Book detail screen showing full book information.
+
+Displays a single book's metadata in a scrollable panel with key
+bindings for navigation between books, editing, and verification.
+"""
+
+from textual.app import ComposeResult
+from textual.binding import Binding
+from textual.screen import Screen
+from textual.widgets import Footer, Static
+
+from ..database import get_book_by_isbn
+from ..models import Book
+
+
+def _format_book_info(book: Book) -> str:
+    """Format a book's metadata as Rich markup text for display.
+
+    Parameters
+    ----------
+    book : Book
+        The book to format.
+
+    Returns
+    -------
+    str
+        Multi-line Rich markup string.
+    """
+    lines = []
+
+    lines.append(f"[bold]{book.full_title}[/bold]")
+    if book.authors:
+        lines.append(f"[#8a7e6a]by[/#8a7e6a] {book.authors}")
+    lines.append("")
+
+    def add_field(label: str, value: str) -> None:
+        if value:
+            lines.append(f"[#8a7e6a]{label}:[/#8a7e6a] {value}")
+
+    add_field("ISBN", book.isbn)
+    add_field("Shelf", book.bookshelf)
+    add_field("Publisher", book.publisher)
+    if book.published_at:
+        add_field("Published", str(book.published_at))
+    add_field("Format", book.format)
+    if book.page_count:
+        add_field("Pages", str(book.page_count))
+    add_field("Language", book.language)
+
+    if book.series:
+        lines.append("")
+        series_info = book.series
+        if book.volume:
+            series_info += f" (Vol. {book.volume})"
+        add_field("Series", series_info)
+
+    if book.categories:
+        lines.append("")
+        add_field("Categories", book.categories)
+
+    contributors = []
+    if book.editors:
+        contributors.append(f"Editors: {book.editors}")
+    if book.translators:
+        contributors.append(f"Translators: {book.translators}")
+    if book.illustrators:
+        contributors.append(f"Illustrators: {book.illustrators}")
+    if contributors:
+        lines.append("")
+        for c in contributors:
+            lines.append(f"[#8a7e6a]{c}[/#8a7e6a]")
+
+    if book.description:
+        lines.append("")
+        lines.append("[#8a7e6a]Description:[/#8a7e6a]")
+        desc = book.description[:500]
+        if len(book.description) > 500:
+            desc += "..."
+        lines.append(desc)
+
+    lines.append("")
+    status = []
+    if book.read:
+        status.append("[#6a9a4a]Read[/#6a9a4a]")
+    if book.wishlist:
+        status.append("[#d4a04a]Wishlist[/#d4a04a]")
+    if book.signed:
+        status.append("[#d4a04a]Signed[/#d4a04a]")
+    if book.number_of_copies > 1:
+        status.append(f"{book.number_of_copies} copies")
+    if status:
+        lines.append(" | ".join(status))
+
+    if book.date_added:
+        lines.append(f"[#8a7e6a]Added: {book.date_added}[/#8a7e6a]")
+
+    if book.verified and book.last_verified:
+        lines.append(f"[#6a9a4a]Verified: {book.last_verified}[/#6a9a4a]")
+    else:
+        lines.append("[#8a7e6a]Not verified[/#8a7e6a]")
+
+    return "\n".join(lines)
+
+
+class BookDetailScreen(Screen):
+    """Full book information display with navigation between books.
+
+    Supports stepping through an ordered ISBN list with ``n``/``p`` keys,
+    and pushing edit or verify screens for the current book.
+
+    Parameters
+    ----------
+    isbn : str
+        ISBN of the book to display initially.
+    isbn_list : list of str, optional
+        Ordered ISBNs for next/previous navigation.
+    """
+
+    BINDINGS = [
+        Binding("e", "edit_book", "Edit"),
+        Binding("v", "verify", "Verify"),
+        Binding("n", "next_book", "Next"),
+        Binding("p", "prev_book", "Previous"),
+        Binding("escape", "go_back", "Back"),
+    ]
+
+    def __init__(self, isbn: str, isbn_list: list[str] | None = None) -> None:
+        super().__init__()
+        self.isbn = isbn
+        self._isbn_list = isbn_list or []
+        self._index = self._isbn_list.index(isbn) if isbn in self._isbn_list else -1
+
+    def compose(self) -> ComposeResult:
+        """Build the screen layout: detail panel and footer."""
+        yield Static("", id="detail-panel")
+        yield Footer()
+
+    def on_mount(self) -> None:
+        """Load and display the book on first mount."""
+        self._display_book()
+
+    def _display_book(self) -> None:
+        """Fetch the current book by ISBN and render it in the detail panel."""
+        book = get_book_by_isbn(self.app.db, self.isbn)
+        if book:
+            self._book = book
+            info = _format_book_info(book)
+            if self._isbn_list:
+                pos = f"[#8a7e6a]{self._index + 1} of {len(self._isbn_list)}[/#8a7e6a]"
+                info = pos + "\n\n" + info
+            self.query_one("#detail-panel").update(info)
+        else:
+            self.query_one("#detail-panel").update(
+                f"[#c45a3a]No book found with ISBN: {self.isbn}[/#c45a3a]"
+            )
+            self._book = None
+
+    def action_next_book(self) -> None:
+        """Navigate to the next book in the ISBN list (bound to ``n``)."""
+        if self._isbn_list and self._index < len(self._isbn_list) - 1:
+            self._index += 1
+            self.isbn = self._isbn_list[self._index]
+            self._display_book()
+
+    def action_prev_book(self) -> None:
+        """Navigate to the previous book in the ISBN list (bound to ``p``)."""
+        if self._isbn_list and self._index > 0:
+            self._index -= 1
+            self.isbn = self._isbn_list[self._index]
+            self._display_book()
+
+    def action_edit_book(self) -> None:
+        """Push the book edit screen (bound to ``e``)."""
+        if self._book:
+            from .book_edit import BookEditScreen
+            self.app.push_screen(BookEditScreen(isbn=self.isbn))
+
+    def action_verify(self) -> None:
+        """Push the verification screen (bound to ``v``)."""
+        if self._book:
+            from .verify import VerifyScreen
+            self.app.push_screen(VerifyScreen(isbn=self.isbn))
+
+    def on_screen_resume(self) -> None:
+        """Refresh the display when returning from edit or verify screens.
+
+        If the ISBN was changed during editing, update the local state to
+        match.
+        """
+        # Check if ISBN was changed during edit
+        edited_isbn = getattr(self.app, "_edited_isbn", None)
+        if edited_isbn:
+            self.isbn = edited_isbn
+            if self._isbn_list and self._index >= 0:
+                self._isbn_list[self._index] = edited_isbn
+            del self.app._edited_isbn
+        self._display_book()
+
+    def action_go_back(self) -> None:
+        """Pop this screen and return to the main screen."""
+        self.app.pop_screen()
