@@ -34,6 +34,7 @@ class MainScreen(Screen):
     BINDINGS = [
         Binding("slash", "focus_search", "Search", key_display="/"),
         Binding("i", "import_csv", "Import"),
+        Binding("b", "backup", "Backup"),
         Binding("m", "toggle_mcp_mode", "MCP mode"),
         Binding("a", "about", "About"),
         Binding("q", "quit", "Quit"),
@@ -197,6 +198,11 @@ class MainScreen(Screen):
         self._resume_scroll_y = book_table.get_scroll_y()
         isbn_list = book_table.get_isbn_list()
         self.app.push_screen(BookDetailScreen(isbn=event.isbn, isbn_list=isbn_list))
+
+    def action_backup(self) -> None:
+        """Push the backup screen (bound to ``b``)."""
+        from .backup import BackupScreen
+        self.app.push_screen(BackupScreen())
 
     def action_about(self) -> None:
         """Push the about screen (bound to ``a``)."""

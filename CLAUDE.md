@@ -12,12 +12,14 @@ src/oakwood/
 ├── models.py               # Book dataclass (26 fields)
 ├── settings.py             # Settings dataclass, load/save JSON from ~/.oakwood/
 ├── importer.py             # Bookshelf CSV import logic
+├── backup.py               # Backup/restore logic (tar.gz archives)
 ├── openlibrary.py          # Open Library API client for verification
 ├── screens/
 │   ├── main.py             # Stats + search + DataTable of recent books
 │   ├── book_detail.py      # Full book info panel
 │   ├── verify.py           # Multi-phase: loading -> comparison -> field resolution -> summary
-│   └── import_csv.py       # File path input + progress + per-book log
+│   ├── import_csv.py       # File path input + progress + per-book log
+│   └── backup.py           # Backup table + create/restore actions
 └── widgets/
     ├── stats_panel.py      # "N books | M shelves" bar
     └── book_table.py       # DataTable wrapper with ISBN tracking + BookSelected message
@@ -42,6 +44,7 @@ oakwood
 - **BookDetailScreen** - Full book info panel. Keys: `v` verify, Escape back.
 - **VerifyScreen** - Multi-phase verification against Open Library API. Keys: `1` keep local, `2` use API, `s` skip, Escape back.
 - **ImportScreen** - CSV file path input + import button + per-book progress log. Escape back.
+- **BackupScreen** - Backup table with create/restore actions. Keys: `b` create backup, `r` restore (double-press), Escape back. Restore is blocked in MCP mode.
 
 ## Dependencies
 
