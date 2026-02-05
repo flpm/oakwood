@@ -34,6 +34,7 @@ class MainScreen(Screen):
     BINDINGS = [
         Binding("slash", "focus_search", "Search", key_display="/"),
         Binding("i", "import_csv", "Import"),
+        Binding("m", "toggle_mcp_mode", "MCP mode"),
         Binding("a", "about", "About"),
         Binding("q", "quit", "Quit"),
     ]
@@ -84,7 +85,8 @@ class MainScreen(Screen):
         last_added = get_last_added_date(conn)
         db_display = self.app._settings.db_path
         self.query_one(StatsPanel).update_stats(
-            __version__, db_display, book_count, len(shelf_counts), last_added
+            __version__, db_display, book_count, len(shelf_counts), last_added,
+            mcp_mode=self.app.mcp_mode,
         )
 
     def _refresh_data(self) -> None:
@@ -166,8 +168,21 @@ class MainScreen(Screen):
         """Focus the search input (bound to ``/``)."""
         self.query_one("#search-input", Input).focus()
 
+    def action_toggle_mcp_mode(self) -> None:
+        """Toggle MCP read-only mode (bound to ``m``)."""
+        self.app.mcp_mode = not self.app.mcp_mode
+        if self.app.mcp_mode:
+            self.notify("MCP mode ON — TUI is read-only", severity="warning")
+        else:
+            self.notify("MCP mode OFF — refreshing data")
+            self._refresh_data()
+        self._refresh_stats()
+
     def action_import_csv(self) -> None:
         """Push the CSV import screen (bound to ``i``)."""
+        if self.app.mcp_mode:
+            self.notify("Import disabled in MCP mode", severity="warning")
+            return
         from .import_csv import ImportScreen
         self.app.push_screen(ImportScreen())
 

@@ -171,12 +171,18 @@ class BookDetailScreen(Screen):
 
     def action_edit_book(self) -> None:
         """Push the book edit screen (bound to ``e``)."""
+        if self.app.mcp_mode:
+            self.notify("Editing disabled in MCP mode", severity="warning")
+            return
         if self._book:
             from .book_edit import BookEditScreen
             self.app.push_screen(BookEditScreen(isbn=self.isbn))
 
     def action_verify(self) -> None:
         """Push the verification screen (bound to ``v``)."""
+        if self.app.mcp_mode:
+            self.notify("Verification disabled in MCP mode", severity="warning")
+            return
         if self._book:
             from .verify import VerifyScreen
             self.app.push_screen(VerifyScreen(isbn=self.isbn))

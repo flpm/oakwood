@@ -20,6 +20,7 @@ class StatsPanel(Static):
         book_count: int,
         shelf_count: int,
         last_added: Optional[date],
+        mcp_mode: bool = False,
     ) -> None:
         """Refresh the stats bar content.
 
@@ -35,10 +36,15 @@ class StatsPanel(Static):
             Number of distinct shelves.
         last_added : date or None
             Date of the most recently added book, or ``None``.
+        mcp_mode : bool
+            Whether MCP mode is active.
         """
         last = str(last_added) if last_added else "-"
-        self.update(
+        text = (
             f"[bold]Oakwood {version}[/bold]  |  {db_path}  |  "
             f"{book_count} books, {shelf_count} shelves  |  "
             f"last added: {last}"
         )
+        if mcp_mode:
+            text += "  [bold #c45a3a]| MCP MODE |[/bold #c45a3a]"
+        self.update(text)

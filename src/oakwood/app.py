@@ -5,6 +5,7 @@ Defines the ``OakwoodApp`` class (the Textual ``App`` subclass) and the
 """
 
 from textual.app import App
+from textual.reactive import reactive
 
 from .database import get_connection, init_db
 from .settings import load_settings
@@ -26,6 +27,8 @@ class OakwoodApp(App):
     SUB_TITLE = "Book Catalogue"
     CSS_PATH = "oakwood.tcss"
 
+    mcp_mode: reactive[bool] = reactive(False)
+
     BINDINGS = [
         ("q", "quit", "Quit"),
     ]
@@ -42,6 +45,13 @@ class OakwoodApp(App):
         """Close the database connection when the app exits."""
         if hasattr(self, "db"):
             self.db.close()
+
+    def watch_mcp_mode(self, value: bool) -> None:
+        """Update the subtitle when MCP mode is toggled."""
+        if value:
+            self.sub_title = "Book Catalogue [MCP mode]"
+        else:
+            self.sub_title = "Book Catalogue"
 
 
 def main() -> None:

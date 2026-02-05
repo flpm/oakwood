@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "oakwood": {
+      "command": "/home/felipe/github/flpm/claude-code/oakwood/.venv/bin/oakwood-mcp",
+      "args": []
+    }
+  }
+}
