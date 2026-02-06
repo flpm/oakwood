@@ -35,8 +35,9 @@ class MainScreen(Screen):
         Binding("slash", "focus_search", "Search", key_display="/"),
         Binding("i", "import_csv", "Import"),
         Binding("b", "backup", "Backup"),
+        Binding("a", "show_activity", "Activity"),
         Binding("m", "toggle_mcp_mode", "MCP mode"),
-        Binding("a", "about", "About"),
+        Binding("question_mark", "about", "About", key_display="?"),
         Binding("q", "quit", "Quit"),
     ]
 
@@ -204,8 +205,13 @@ class MainScreen(Screen):
         from .backup import BackupScreen
         self.app.push_screen(BackupScreen())
 
+    def action_show_activity(self) -> None:
+        """Push the activity screen (bound to ``a``)."""
+        from .activity import ActivityScreen
+        self.app.push_screen(ActivityScreen())
+
     def action_about(self) -> None:
-        """Push the about screen (bound to ``a``)."""
+        """Push the about screen (bound to ``?``)."""
         from .about import AboutScreen
         self.app.push_screen(AboutScreen())
 

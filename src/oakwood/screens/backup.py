@@ -12,6 +12,7 @@ from textual.screen import Screen
 from textual.widgets import DataTable, Footer, RichLog, Static
 from textual import work
 
+from ..activity_log import log_activity
 from ..backup import (
     BackupInfo,
     create_backup,
@@ -112,6 +113,11 @@ class BackupScreen(Screen):
             self.app.call_from_thread(self._flush_wal)
 
             info = create_backup(db_path, covers_path, on_progress=on_progress)
+            log_activity(
+                "backup", "tui",
+                backup_filename=info.filename,
+                size_bytes=info.size_bytes,
+            )
             self.app.call_from_thread(
                 self._log,
                 f"[#6a9a4a]Backup created: {info.filename} ({format_size(info.size_bytes)})[/#6a9a4a]",
@@ -193,6 +199,7 @@ class BackupScreen(Screen):
             # Reopen DB on main thread
             self.app.call_from_thread(self._reopen_db)
 
+            log_activity("restore", "tui", backup_filename=backup.filename)
             self.app.call_from_thread(
                 self._log,
                 f"[#6a9a4a]Restored from {backup.filename}[/#6a9a4a]",

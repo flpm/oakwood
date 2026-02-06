@@ -13,6 +13,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Footer, Input, RichLog, Static
 from textual import work
 
+from ..activity_log import log_activity
 from ..importer import import_csv
 
 
@@ -57,6 +58,7 @@ class ImportScreen(Screen):
 
         self.query_one("#import-button", Button).disabled = True
         self.query_one("#import-path-input", Input).disabled = True
+        self._import_path = path
         self._log(f"[#8a7e6a]Importing from {path.name}...[/#8a7e6a]")
         self._run_import(path)
 
@@ -117,6 +119,13 @@ class ImportScreen(Screen):
             self._log(f"[bold]Imported {added} books ({skipped} skipped)[/bold]")
         else:
             self._log(f"[bold]Imported {added} books[/bold]")
+
+        log_activity(
+            "import", "tui",
+            csv_path=str(self._import_path),
+            added_count=added,
+            skipped_count=skipped,
+        )
         self._re_enable_input()
 
     def _re_enable_input(self) -> None:

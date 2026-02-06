@@ -13,6 +13,7 @@ from textual.containers import Horizontal, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, Checkbox, Footer, Input, Label, Static, TextArea
 
+from ..activity_log import log_activity
 from ..database import book_exists, get_book_by_isbn, update_book_fields
 from ..models import Book
 
@@ -377,6 +378,16 @@ class BookEditScreen(Screen):
             new_isbn = new_isbn.strip() if isinstance(new_isbn, str) else new_isbn
             update_book_fields(self.app.db, self.isbn, {"isbn": new_isbn})
             self.app._edited_isbn = new_isbn
+
+        # Log the edit activity
+        changed_fields = list(diff.keys()) + (["isbn"] if new_isbn else [])
+        if changed_fields:
+            log_activity(
+                "edit", "tui",
+                isbn=new_isbn or self.isbn,
+                title=self._book.title,
+                changed_fields=changed_fields,
+            )
 
         self.app.pop_screen()
 

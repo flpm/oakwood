@@ -14,6 +14,7 @@ from textual.containers import VerticalScroll
 from textual.widgets import DataTable, Footer, LoadingIndicator, Static
 from textual import work
 
+from ..activity_log import log_activity
 from ..database import get_book_by_isbn, update_book_fields
 from ..openlibrary import OpenLibraryError, fetch_book
 
@@ -241,6 +242,15 @@ class VerifyScreen(Screen):
         self._updates["verified"] = True
         self._updates["last_verified"] = date.today()
         update_book_fields(self.app.db, self.isbn, self._updates)
+
+        # Log the verification
+        log_activity(
+            "verify", "tui",
+            isbn=self.isbn,
+            title=self._book.title,
+            fields_updated=self._updated_fields,
+            fields_skipped=self._skipped_fields,
+        )
 
         # Show summary
         lines = ["[bold]Verification complete[/bold]", ""]

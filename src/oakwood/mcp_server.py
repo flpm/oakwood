@@ -18,6 +18,7 @@ from datetime import date
 from pathlib import Path
 from typing import Optional
 
+from .activity_log import log_activity
 from .database import (
     book_exists,
     get_all_books,
@@ -313,6 +314,7 @@ def add_book(
     )
     insert_book(_conn, book)
     _conn.commit()
+    log_activity("create", "mcp", isbn=isbn, title=title, bookshelf=bookshelf)
     return _book_to_dict(book)
 
 
@@ -351,6 +353,12 @@ def update_book(isbn: str, updates: dict) -> dict | str:
         return f"No book found with ISBN: {isbn}"
 
     book = get_book_by_isbn(_conn, isbn)
+    log_activity(
+        "edit", "mcp",
+        isbn=isbn,
+        title=book.title if book else None,
+        changed_fields=list(converted.keys()),
+    )
     return _book_to_dict(book) if book else "Book updated but could not be re-read"
 
 
@@ -415,10 +423,19 @@ def verify_book(isbn: str, accept_api_values: bool = False) -> dict | str:
         _conn, isbn, {"verified": True, "last_verified": date.today()}
     )
 
+    fields_updated = list(api_updates.keys()) if accept_api_values else []
+    log_activity(
+        "verify", "mcp",
+        isbn=isbn,
+        title=book.title,
+        fields_updated=fields_updated,
+        fields_skipped=list(set(diff.keys()) - set(fields_updated)),
+    )
+
     return {
         "isbn": isbn,
         "differences": diff,
-        "fields_updated": list(api_updates.keys()) if accept_api_values else [],
+        "fields_updated": fields_updated,
         "verified": True,
     }
 
@@ -446,6 +463,12 @@ def import_csv_file(csv_path: str) -> dict | str:
     except Exception as e:
         return f"Import error: {e}"
 
+    log_activity(
+        "import", "mcp",
+        csv_path=csv_path,
+        added_count=added,
+        skipped_count=skipped,
+    )
     return {"added": added, "skipped": skipped}
 
 
